@@ -1,22 +1,11 @@
 {
-  "name": "ubersicht-mac",
-  "version": "1.0.0",
-  "description": "_Keep an eye on what's happening on your machine and in the world._",
-  "main": "index.js",
-  "type": "module",
+  "name": "claude-usage-widget",
+  "version": "0.1.0",
+  "description": "Übersicht widget showing your Claude usage: cost & tokens from local Claude Code logs, plus subscription limit gauges with reset times.",
+  "private": true,
+  "type": "commonjs",
   "scripts": {
-    "test": "node ./twitch/utils/index.js"
+    "test": "node --test tests/**/*.test.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@playwright/test": "^1.42.1",
-    "@types/node": "^20.12.2"
-  },
-  "dependencies": {
-    "cheerio": "^1.0.0-rc.12",
-    "cheerio-select": "^2.1.0",
-    "puppeteer": "^22.6.1"
-  }
+  "license": "MIT"
 }
