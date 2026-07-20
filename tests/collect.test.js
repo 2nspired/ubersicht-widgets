@@ -26,22 +26,20 @@ test("collect --mock prints a schema-conformant payload", () => {
   }
 });
 
-test("collect --no-mock degrades the logs layer gracefully when no log files exist", () => {
-  // CLAUDE_USAGE_WIDGET_HOME only redirects logs.js's log-file lookup; it has
-  // no effect on limits.js, which reads credentials from macOS Keychain
-  // (readAccessToken() always uses the real os.homedir()) independent of
-  // this override. So on a machine with valid Claude Code credentials, the
-  // limits layer is expected to genuinely succeed here even though logs
-  // degrades to "unavailable" for lack of any log files under the temp HOME.
+test("collect --no-mock with isolated env degrades both layers to unavailable", () => {
+  // CLAUDE_USAGE_WIDGET_HOME redirects logs.js's log-file lookup to an empty
+  // temp dir, so the logs layer degrades to "unavailable" for lack of any
+  // log files. CLAUDE_USAGE_WIDGET_NO_KEYCHAIN is the matching seam for the
+  // limits layer: it short-circuits collectLimits() before any Keychain or
+  // network access, so this test never makes a live call to the Anthropic
+  // usage endpoint and never touches the developer's real credentials,
+  // regardless of what's in Keychain on the machine running the suite.
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cuw-collect-home-"));
   const out = execFileSync(process.execPath, [COLLECT, "--no-mock"], {
     encoding: "utf8",
-    env: { ...process.env, CLAUDE_USAGE_WIDGET_HOME: tmp },
+    env: { ...process.env, CLAUDE_USAGE_WIDGET_HOME: tmp, CLAUDE_USAGE_WIDGET_NO_KEYCHAIN: "1" },
   });
   const payload = JSON.parse(out);
   assert.equal(payload.providers.claude.logs.status, "unavailable");
-  assert.ok(
-    ["ok", "unavailable", "error"].includes(payload.providers.claude.limits.status),
-    "limits layer must degrade instead of crashing collect.js"
-  );
+  assert.equal(payload.providers.claude.limits.status, "unavailable");
 });

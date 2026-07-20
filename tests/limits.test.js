@@ -81,3 +81,21 @@ test("collectLimits reports unavailable when the response yields no buckets", as
   const result = await collectLimits({ token: "fake-token", fetch: async () => ({}) });
   assert.deepEqual(result, { status: "unavailable", message: "unrecognized usage response" });
 });
+
+test("collectLimits short-circuits to unavailable when CLAUDE_USAGE_WIDGET_NO_KEYCHAIN=1, without touching keychain/network", async () => {
+  // No token/fetch overrides are passed here on purpose: the point of this
+  // test is that collectLimits() called exactly the way collect.js calls it
+  // in production (no args) never reaches readAccessToken() or the real
+  // fetchUsageRaw() when the env seam is set. If it did, this test would
+  // either hang/timeout or prompt for Keychain access instead of resolving
+  // fast and deterministically.
+  const prev = process.env.CLAUDE_USAGE_WIDGET_NO_KEYCHAIN;
+  process.env.CLAUDE_USAGE_WIDGET_NO_KEYCHAIN = "1";
+  try {
+    const result = await collectLimits();
+    assert.deepEqual(result, { status: "unavailable", message: "credentials disabled by env" });
+  } finally {
+    if (prev === undefined) delete process.env.CLAUDE_USAGE_WIDGET_NO_KEYCHAIN;
+    else process.env.CLAUDE_USAGE_WIDGET_NO_KEYCHAIN = prev;
+  }
+});

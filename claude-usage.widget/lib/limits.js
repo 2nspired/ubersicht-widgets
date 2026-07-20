@@ -200,7 +200,23 @@ function normalizeBuckets(raw) {
 // `token`/`fetch` overrides exist for tests (mirrors collectLogs's options
 // pattern in logs.js); collect.js's real call site always uses collectLimits()
 // with no arguments, which falls through to the real readAccessToken()/fetchUsageRaw().
-async function collectLimits({ token = readAccessToken(), fetch = fetchUsageRaw } = {}) {
+//
+// NOTE: `token` intentionally has no default value in the parameter list.
+// Default parameter expressions are evaluated during argument binding,
+// before the function body (and therefore before the env-var guard below)
+// ever runs, so `token = readAccessToken()` here would call the real
+// Keychain lookup even when the seam is active. Instead the default is
+// applied lazily inside the body, after the guard has had a chance to
+// short-circuit.
+async function collectLimits({ token, fetch = fetchUsageRaw } = {}) {
+  // Test isolation seam, same spirit as CLAUDE_USAGE_WIDGET_HOME in logs.js:
+  // lets the test suite force this layer to "unavailable" without ever
+  // touching macOS Keychain or the network, regardless of what credentials
+  // exist on the developer's machine.
+  if (process.env.CLAUDE_USAGE_WIDGET_NO_KEYCHAIN === "1") {
+    return { status: "unavailable", message: "credentials disabled by env" };
+  }
+  if (token === undefined) token = readAccessToken();
   if (!token) return { status: "unavailable", message: "no Claude Code credentials found" };
 
   const raw = await fetch(token);
