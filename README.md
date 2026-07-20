@@ -25,6 +25,34 @@ Four things, refreshed every minute, in whichever layout you like:
   not logged in, endpoint hiccup) just quietly disappears instead of
   breaking the widget.
 
+## TL;DR — just tell your agent
+
+Life's short. Paste this into Claude Code (or any capable coding agent) and go
+get coffee:
+
+```text
+Install the claude-usage-widget Übersicht widget on this Mac:
+
+1. If Übersicht isn't installed: `brew install --cask ubersicht`, then open it once.
+2. Clone https://github.com/2nspired/claude-usage-widget.git into my usual projects
+   directory.
+3. Symlink the widget into Übersicht:
+   ln -sfn "<clone-path>/claude-usage.widget" \
+     "$HOME/Library/Application Support/Übersicht/widgets/claude-usage.widget"
+4. Verify `node -v` is ≥ 18 (install via brew if missing).
+5. Smoke-test: run `<clone-path>/claude-usage.widget/lib/run.sh` and confirm it prints
+   JSON with providers.claude.logs.status "ok" (requires Claude Code with at least one
+   past session). If limits.status isn't "ok", warn me to watch for a one-time macOS
+   Keychain prompt and click "Always Allow", then re-test.
+6. Relaunch Übersicht and confirm the ticker renders at the bottom of my screen.
+7. Ask me for my preferences and set them in claude-usage.widget/config.json:
+   layout ("ticker" | "ticker-2line" | "bar" | "corner"), position.align
+   ("left" | "center" | "right"), position.bottom, and scale (use ~1.5 on 4K/hi-dpi).
+8. Local install only — do not commit or push anything.
+```
+
+Prefer doing things by hand? Read on.
+
 ## Requirements
 
 - macOS
