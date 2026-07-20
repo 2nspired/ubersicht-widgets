@@ -35,6 +35,7 @@ const pill = css`
 
 const sub = css` color: #9aa0b0; `;
 const strong = css` color: #e8eaf0; font-weight: 600; `;
+const logo = css` color: #d97757; font-weight: 600; `;
 const divider = css` width: 1px; align-self: stretch; background: rgba(255, 255, 255, 0.1); `;
 const barOuter = css`
   display: inline-block;
@@ -86,7 +87,7 @@ const Ticker = ({ logs, limits, config }) => {
   );
   return (
     <div className={pill}>
-      <span className={strong}>✳</span>
+      <span className={logo}>✳</span>
       {logs.status === "ok" && (
         <span className={sub}>
           {config.showCost && <span className={strong}>{fmtCost(logs.today.costUsd)} </span>}
@@ -115,7 +116,7 @@ const Ticker2Line = ({ logs, limits, config }) => {
   return (
     <div className={pill} style={{ flexDirection: "column", alignItems: "stretch", gap: 7, borderRadius: 16 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-        <span className={strong}>✳</span>
+        <span className={logo}>✳</span>
         {logs.status === "ok" && (
           <span className={sub}>
             Today {config.showCost && <span className={strong}>{fmtCost(logs.today.costUsd)}</span>} ·{" "}
