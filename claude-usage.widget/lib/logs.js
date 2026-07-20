@@ -72,4 +72,67 @@ function listJsonlFiles(projectsDir) {
   return out;
 }
 
-module.exports = { parseLine, summarizeFile, findProjectDirs, listJsonlFiles, localDayKey, ZERO };
+function costUsd(model, sums, pricing) {
+  const r = pricing[model];
+  if (!r) return null;
+  return (
+    (sums.input * r.input +
+      sums.output * r.output +
+      sums.cacheRead * r.cacheRead +
+      sums.cacheWrite5m * r.cacheWrite5m +
+      sums.cacheWrite1h * r.cacheWrite1h) / 1e6
+  );
+}
+
+const totalTokens = (s) => s.input + s.output + s.cacheRead + s.cacheWrite5m + s.cacheWrite1h;
+
+function buildLogsSection(fileSummaries, now, pricing) {
+  const dayKeys = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    dayKeys.push(localDayKey(d));
+  }
+  const todayKey = dayKeys[6];
+
+  const perDay = {}; // key -> {tokens, costUsd}
+  const todayModels = {}; // model -> {tokens, costUsd}
+  let sessions = 0;
+
+  for (const file of fileSummaries) {
+    if (file.days[todayKey]) sessions++;
+    for (const [dayKey, day] of Object.entries(file.days)) {
+      if (!dayKeys.includes(dayKey)) continue;
+      const slot = (perDay[dayKey] = perDay[dayKey] || { tokens: 0, costUsd: 0 });
+      for (const [model, sums] of Object.entries(day.models)) {
+        slot.tokens += totalTokens(sums);
+        slot.costUsd += costUsd(model, sums, pricing) || 0;
+        if (dayKey === todayKey) {
+          const tm = (todayModels[model] = todayModels[model] || { tokens: 0, costUsd: 0 });
+          tm.tokens += totalTokens(sums);
+          tm.costUsd += costUsd(model, sums, pricing) || 0;
+        }
+      }
+    }
+  }
+
+  const days = dayKeys.map((date) => ({
+    date,
+    costUsd: round2((perDay[date] || {}).costUsd || 0),
+    tokens: (perDay[date] || {}).tokens || 0,
+  }));
+  const today = days[6];
+
+  return {
+    status: "ok",
+    today: { costUsd: today.costUsd, tokens: today.tokens, sessions },
+    week: { costUsd: round2(days.reduce((a, d) => a + d.costUsd, 0)), days },
+    models: Object.entries(todayModels)
+      .map(([model, v]) => ({ model, tokens: v.tokens, costUsd: round2(v.costUsd) }))
+      .sort((a, b) => b.tokens - a.tokens),
+  };
+}
+
+function round2(n) { return Math.round(n * 100) / 100; }
+
+module.exports = { parseLine, summarizeFile, findProjectDirs, listJsonlFiles, localDayKey, ZERO, costUsd, buildLogsSection, totalTokens };
