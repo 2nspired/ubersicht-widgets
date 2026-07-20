@@ -54,7 +54,18 @@ export const fmtCost = (n) =>
 export const fmtTokens = (n) =>
   n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}k` : `${n}`;
 // Rough, order-of-magnitude estimate — see WH_PER_MTOK in lib/logs.js.
-export const fmtEnergy = (n) => `⚡ ${n ?? 0} kWh`;
+const Bolt = () => (
+  <svg width="10" height="10" viewBox="0 0 24 24" style={{ verticalAlign: "-1px", marginRight: 2 }}>
+    <path fill="#d9a557" d="M13 2 4.7 13.2l5.9.4L9 22l10.3-12.2-6.4-.4L13 2z" />
+  </svg>
+);
+export const fmtEnergy = (n) => (
+  <span style={{ whiteSpace: "nowrap" }}><Bolt />{n ?? 0} kWh</span>
+);
+const joinParts = (parts) =>
+  parts.filter(Boolean).map((part, i) => (
+    <span key={i} style={{ display: "contents" }}>{i > 0 && " \u00b7 "}{part}</span>
+  ));
 
 export const fmtReset = (iso, now = new Date()) => {
   if (!iso) return "";
@@ -201,11 +212,11 @@ const BarLayout = ({ logs, limits, config }) => {
             <div className={label}>Today</div>
             <span className={strong} style={{ fontSize: 16 }}>{config.showCost ? fmtCost(logs.today.costUsd) : fmtTokens(logs.today.tokens)}</span>{" "}
             <span className={sub}>
-              {[
+              {joinParts([
                 config.showTokens !== false && `${fmtTokens(logs.today.tokens)} tok`,
                 `${logs.today.sessions} sess`,
                 config.showEnergy && fmtEnergy(logs.today.energyKwh),
-              ].filter(Boolean).join(" · ")}
+              ])}
             </span>
           </span>
           <span className={divider} style={{ margin: "0 18px" }} />
@@ -267,10 +278,10 @@ const CornerCard = ({ logs, limits, config }) => {
           <div>
             {config.showCost && <span className={strong} style={{ fontSize: 20 }}>{fmtCost(logs.today.costUsd)} </span>}
             <span className={sub}>
-              {[
+              {joinParts([
                 config.showTokens !== false && `${fmtTokens(logs.today.tokens)} tok`,
                 config.showEnergy && fmtEnergy(logs.today.energyKwh),
-              ].filter(Boolean).join(" · ")}
+              ])}
             </span>
           </div>
           <Sparkline days={logs.week.days} width={178} />
