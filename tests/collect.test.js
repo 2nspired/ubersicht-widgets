@@ -1,6 +1,8 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
 const { execFileSync } = require("node:child_process");
+const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 
 const COLLECT = path.join(__dirname, "..", "claude-usage.widget", "lib", "collect.js");
@@ -25,8 +27,12 @@ test("collect --mock prints a schema-conformant payload", () => {
 });
 
 test("collect --no-mock degrades gracefully (no layers yet)", () => {
-  const out = execFileSync(process.execPath, [COLLECT, "--no-mock"], { encoding: "utf8" });
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cuw-collect-home-"));
+  const out = execFileSync(process.execPath, [COLLECT, "--no-mock"], {
+    encoding: "utf8",
+    env: { ...process.env, CLAUDE_USAGE_WIDGET_HOME: tmp },
+  });
   const payload = JSON.parse(out);
-  assert.ok(["ok","unavailable"].includes(payload.providers.claude.logs.status), "logs returns ok or unavailable");
+  assert.equal(payload.providers.claude.logs.status, "unavailable");
   assert.equal(payload.providers.claude.limits.status, "error");
 });

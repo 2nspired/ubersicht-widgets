@@ -40,7 +40,10 @@ async function main() {
   } else {
     const logs = await layer(() => {
       const { collectLogs } = require("./logs");
-      return collectLogs();
+      return collectLogs({
+        home: process.env.CLAUDE_USAGE_WIDGET_HOME || undefined,
+        cachePath: process.env.CLAUDE_USAGE_WIDGET_CACHE || undefined,
+      });
     });
     const limits = await layer(() => {
       const { collectLimits } = require("./limits");

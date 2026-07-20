@@ -158,12 +158,15 @@ function startOfToday(now = new Date()) {
   return d.getTime();
 }
 
-function summarizeFileCached(filePath, cache, now = new Date()) {
+function summarizeFileCached(filePath, cache, now = new Date(), outCache = cache) {
   const mtimeMs = fs.statSync(filePath).mtimeMs;
   const cached = cache[filePath];
-  if (cached && cached.mtimeMs === mtimeMs) return cached.summary;
+  if (cached && cached.mtimeMs === mtimeMs && cached.summary && typeof cached.summary.days === "object") {
+    if (outCache !== cache) outCache[filePath] = cached;
+    return cached.summary;
+  }
   const summary = summarizeFile(filePath);
-  if (mtimeMs < startOfToday(now)) cache[filePath] = { mtimeMs, summary };
+  if (mtimeMs < startOfToday(now)) outCache[filePath] = { mtimeMs, summary };
   return summary;
 }
 
@@ -180,14 +183,15 @@ async function collectLogs(opts = {}) {
   let cache = {};
   try { cache = JSON.parse(fs.readFileSync(cachePath, "utf8")); } catch {}
 
+  const newCache = {};
   const summaries = [];
   for (const f of files) {
-    try { summaries.push(summarizeFileCached(f, cache, now)); } catch {}
+    try { summaries.push(summarizeFileCached(f, cache, now, newCache)); } catch {}
   }
 
   try {
     fs.mkdirSync(path.dirname(cachePath), { recursive: true });
-    fs.writeFileSync(cachePath, JSON.stringify(cache));
+    fs.writeFileSync(cachePath, JSON.stringify(newCache));
   } catch {}
 
   return buildLogsSection(summaries, now, PRICING);
