@@ -1,0 +1,6 @@
+{
+  "name": "Claude Usage",
+  "description": "Claude usage on your desktop: today's tokens and API-equivalent cost from local Claude Code logs, plus session/weekly/Fable limit gauges with reset countdowns. Four minimalist layouts.",
+  "author": "Thomas Trudzinski",
+  "email": "thomastrudzinski@gmail.com"
+}
