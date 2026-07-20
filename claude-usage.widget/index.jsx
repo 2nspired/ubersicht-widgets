@@ -2,7 +2,7 @@ import { css } from "uebersicht";
 
 export const command = "claude-usage.widget/lib/run.sh";
 // Übersicht requires a static export; keep in sync with config.json refreshSeconds.
-export const refreshFrequency = 60000;
+export const refreshFrequency = 5000;
 
 export const className = `
   bottom: 8px;
@@ -49,7 +49,8 @@ const barOuter = css`
 `;
 
 export const barColor = (pct) => (pct >= 80 ? RED : pct >= 50 ? AMBER : GREEN);
-export const fmtCost = (n) => `$${n.toFixed(2)}`;
+export const fmtCost = (n) =>
+  `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 export const fmtTokens = (n) =>
   n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}k` : `${n}`;
 
