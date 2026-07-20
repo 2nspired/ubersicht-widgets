@@ -104,6 +104,44 @@ const Ticker = ({ logs, limits, config }) => {
   );
 };
 
+const label = css`
+  font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: #8b90a0;
+`;
+
+const Ticker2Line = ({ logs, limits, config }) => {
+  const buckets = (limits.status === "ok" ? limits.buckets : []).filter(
+    (b) => config.showFable !== false || b.id !== "week_fable"
+  );
+  return (
+    <div className={pill} style={{ flexDirection: "column", alignItems: "stretch", gap: 7, borderRadius: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <span className={strong}>✳</span>
+        {logs.status === "ok" && (
+          <span className={sub}>
+            Today {config.showCost && <span className={strong}>{fmtCost(logs.today.costUsd)}</span>} ·{" "}
+            {fmtTokens(logs.today.tokens)} tok · {logs.today.sessions} sessions
+          </span>
+        )}
+        {logs.status === "ok" && config.showCost && (
+          <span className={sub}>7d <span className={strong}>{fmtCost(logs.week.costUsd)}</span></span>
+        )}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+        {buckets.map((b) => (
+          <span key={b.id} className={sub}>
+            <span className={label}>{b.label}</span> <span className={strong}>{b.pctUsed}%</span>
+            <span className={barOuter} style={{ width: 64 }}>
+              <span style={{ display: "block", height: "100%", borderRadius: 2,
+                width: `${Math.min(b.pctUsed, 100)}%`, background: barColor(b.pctUsed) }} />
+            </span>
+            {fmtReset(b.resetsAt)}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const Positioned = ({ align, scale = 1, children }) => (
   <div style={{ display: "flex", width: "100%", justifyContent: alignToJustify(align), padding: "0 12px" }}>
     <div style={{ zoom: scale }}>{children}</div>
@@ -127,9 +165,11 @@ export const render = ({ output }) => {
   const scale = config.scale || 1;
   const { logs, limits } = payload.providers.claude;
   // layout dispatch — more layouts added in Tasks 4 and 11
+  const LAYOUTS = { ticker: Ticker, "ticker-2line": Ticker2Line };
+  const Layout = LAYOUTS[config.layout] || Ticker;
   return (
     <Positioned align={align} scale={scale}>
-      <Ticker logs={logs} limits={limits} config={config} />
+      <Layout logs={logs} limits={limits} config={config} />
     </Positioned>
   );
 };
