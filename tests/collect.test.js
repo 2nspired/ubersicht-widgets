@@ -26,7 +26,13 @@ test("collect --mock prints a schema-conformant payload", () => {
   }
 });
 
-test("collect --no-mock degrades gracefully (no layers yet)", () => {
+test("collect --no-mock degrades the logs layer gracefully when no log files exist", () => {
+  // CLAUDE_USAGE_WIDGET_HOME only redirects logs.js's log-file lookup; it has
+  // no effect on limits.js, which reads credentials from macOS Keychain
+  // (readAccessToken() always uses the real os.homedir()) independent of
+  // this override. So on a machine with valid Claude Code credentials, the
+  // limits layer is expected to genuinely succeed here even though logs
+  // degrades to "unavailable" for lack of any log files under the temp HOME.
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cuw-collect-home-"));
   const out = execFileSync(process.execPath, [COLLECT, "--no-mock"], {
     encoding: "utf8",
@@ -34,5 +40,8 @@ test("collect --no-mock degrades gracefully (no layers yet)", () => {
   });
   const payload = JSON.parse(out);
   assert.equal(payload.providers.claude.logs.status, "unavailable");
-  assert.equal(payload.providers.claude.limits.status, "error");
+  assert.ok(
+    ["ok", "unavailable", "error"].includes(payload.providers.claude.limits.status),
+    "limits layer must degrade instead of crashing collect.js"
+  );
 });
