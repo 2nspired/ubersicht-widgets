@@ -2,7 +2,7 @@ import { css } from "uebersicht";
 
 export const command = "claude-usage.widget/lib/run.sh";
 // Übersicht requires a static export; keep in sync with config.json refreshSeconds.
-export const refreshFrequency = 5000;
+export const refreshFrequency = 60000;
 
 export const className = `
   bottom: 8px;
