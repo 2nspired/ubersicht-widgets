@@ -161,7 +161,7 @@ function startOfToday(now = new Date()) {
 function summarizeFileCached(filePath, cache, now = new Date(), outCache = cache) {
   const mtimeMs = fs.statSync(filePath).mtimeMs;
   const cached = cache[filePath];
-  if (cached && cached.mtimeMs === mtimeMs && cached.summary && typeof cached.summary.days === "object") {
+  if (cached && cached.mtimeMs === mtimeMs && cached.summary && cached.summary.days && typeof cached.summary.days === "object") {
     if (outCache !== cache) outCache[filePath] = cached;
     return cached.summary;
   }

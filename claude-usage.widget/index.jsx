@@ -250,8 +250,9 @@ const CornerCard = ({ logs, limits, config }) => {
   );
 };
 
-const Positioned = ({ align, scale = 1, children }) => (
-  <div style={{ display: "flex", width: "100%", justifyContent: alignToJustify(align), padding: "0 12px" }}>
+const Positioned = ({ align, scale = 1, bottom = 8, children }) => (
+  // className anchors the widget at bottom: 8px; margin makes config.position.bottom effective
+  <div style={{ display: "flex", width: "100%", justifyContent: alignToJustify(align), padding: "0 12px", marginBottom: bottom - 8 }}>
     <div style={{ zoom: scale }}>{children}</div>
   </div>
 );
@@ -270,13 +271,14 @@ export const render = ({ output }) => {
 
   const { config } = payload;
   const align = (config.position && config.position.align) || "center";
+  const bottom = (config.position && typeof config.position.bottom === "number") ? config.position.bottom : 8;
   const scale = config.scale || 1;
   const { logs, limits } = payload.providers.claude;
   // layout dispatch — more layouts added in Tasks 4 and 11
   const LAYOUTS = { ticker: Ticker, "ticker-2line": Ticker2Line, bar: BarLayout, corner: CornerCard };
   const Layout = LAYOUTS[config.layout] || Ticker;
   return (
-    <Positioned align={align} scale={scale}>
+    <Positioned align={align} scale={scale} bottom={bottom}>
       <Layout logs={logs} limits={limits} config={config} />
     </Positioned>
   );
