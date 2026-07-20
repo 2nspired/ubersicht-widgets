@@ -31,7 +31,7 @@ async function layer(loader) {
 
 async function main() {
   const config = readConfig();
-  const useMock = config.mock || process.argv.includes("--mock");
+  const useMock = process.argv.includes("--no-mock") ? false : config.mock || process.argv.includes("--mock");
   let providers;
 
   if (useMock) {

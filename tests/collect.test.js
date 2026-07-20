@@ -24,9 +24,9 @@ test("collect --mock prints a schema-conformant payload", () => {
   }
 });
 
-test("collect without mock degrades gracefully (no layers yet)", () => {
-  const out = execFileSync(process.execPath, [COLLECT], { encoding: "utf8" });
+test("collect --no-mock degrades gracefully (no layers yet)", () => {
+  const out = execFileSync(process.execPath, [COLLECT, "--no-mock"], { encoding: "utf8" });
   const payload = JSON.parse(out);
-  assert.ok(["ok", "unavailable", "error"].includes(payload.providers.claude.logs.status));
-  assert.ok(["ok", "unavailable", "error"].includes(payload.providers.claude.limits.status));
+  assert.equal(payload.providers.claude.logs.status, "error");
+  assert.equal(payload.providers.claude.limits.status, "error");
 });
