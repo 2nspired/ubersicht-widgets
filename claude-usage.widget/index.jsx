@@ -142,6 +142,103 @@ const Ticker2Line = ({ logs, limits, config }) => {
   );
 };
 
+const Sparkline = ({ days, width = 7 * 9 }) => {
+  const max = Math.max(...days.map((d) => d.tokens), 1);
+  return (
+    <span style={{ display: "inline-flex", alignItems: "flex-end", gap: 2, height: 22, width }}>
+      {days.map((d) => (
+        <span key={d.date} style={{
+          flex: 1, borderRadius: "1.5px 1.5px 0 0",
+          background: "rgba(217,119,87,0.75)",
+          height: `${Math.max(8, (d.tokens / max) * 100)}%`,
+        }} />
+      ))}
+    </span>
+  );
+};
+
+const BarLayout = ({ logs, limits, config }) => {
+  const buckets = (limits.status === "ok" ? limits.buckets : []).filter(
+    (b) => config.showFable !== false || b.id !== "week_fable"
+  );
+  return (
+    <div className={pill} style={{ borderRadius: 14, gap: 0 }}>
+      {logs.status === "ok" && (
+        <>
+          <span>
+            <div className={label}>Today</div>
+            <span className={strong} style={{ fontSize: 16 }}>{config.showCost ? fmtCost(logs.today.costUsd) : fmtTokens(logs.today.tokens)}</span>{" "}
+            <span className={sub}>{fmtTokens(logs.today.tokens)} tok · {logs.today.sessions} sess</span>
+          </span>
+          <span className={divider} style={{ margin: "0 16px" }} />
+          <span>
+            <div className={label}>7-day{config.showCost ? ` · ${fmtCost(logs.week.costUsd)}` : ""}</div>
+            <Sparkline days={logs.week.days} />
+          </span>
+          <span className={divider} style={{ margin: "0 16px" }} />
+          <span>
+            <div className={label}>Models</div>
+            <span className={sub}>
+              {logs.models.slice(0, 2).map((m, i) => {
+                const total = logs.models.reduce((a, x) => a + x.tokens, 0) || 1;
+                return (
+                  <span key={m.model}>{i > 0 && " · "}{m.model.replace("claude-", "")}{" "}
+                    <span className={strong}>{Math.round((m.tokens / total) * 100)}%</span>
+                  </span>
+                );
+              })}
+            </span>
+          </span>
+          {buckets.length > 0 && <span className={divider} style={{ margin: "0 16px" }} />}
+        </>
+      )}
+      <span style={{ display: "flex", gap: 14 }}>
+        {buckets.map((b) => (
+          <span key={b.id}>
+            <div className={label}>{b.label} · {fmtReset(b.resetsAt)}</div>
+            <span className={barOuter} style={{ width: 90, margin: 0 }}>
+              <span style={{ display: "block", height: "100%", borderRadius: 2,
+                width: `${Math.min(b.pctUsed, 100)}%`, background: barColor(b.pctUsed) }} />
+            </span>
+          </span>
+        ))}
+      </span>
+    </div>
+  );
+};
+
+const CornerCard = ({ logs, limits, config }) => {
+  const buckets = (limits.status === "ok" ? limits.buckets : []).filter(
+    (b) => config.showFable !== false || b.id !== "week_fable"
+  );
+  return (
+    <div className={pill} style={{ flexDirection: "column", alignItems: "stretch", gap: 6, borderRadius: 14, width: 210, padding: "12px 16px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <span className={label}>Claude · Today</span>
+        <span className={sub}>{new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
+      </div>
+      {logs.status === "ok" && (
+        <>
+          <div>
+            {config.showCost && <span className={strong} style={{ fontSize: 20 }}>{fmtCost(logs.today.costUsd)} </span>}
+            <span className={sub}>{fmtTokens(logs.today.tokens)} tok</span>
+          </div>
+          <Sparkline days={logs.week.days} width={178} />
+        </>
+      )}
+      {buckets.map((b) => (
+        <div key={b.id}>
+          <div className={label}>{b.label} {b.pctUsed}% · {fmtReset(b.resetsAt)}</div>
+          <span className={barOuter} style={{ width: "100%", margin: 0 }}>
+            <span style={{ display: "block", height: "100%", borderRadius: 2,
+              width: `${Math.min(b.pctUsed, 100)}%`, background: barColor(b.pctUsed) }} />
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const Positioned = ({ align, scale = 1, children }) => (
   <div style={{ display: "flex", width: "100%", justifyContent: alignToJustify(align), padding: "0 12px" }}>
     <div style={{ zoom: scale }}>{children}</div>
@@ -165,7 +262,7 @@ export const render = ({ output }) => {
   const scale = config.scale || 1;
   const { logs, limits } = payload.providers.claude;
   // layout dispatch — more layouts added in Tasks 4 and 11
-  const LAYOUTS = { ticker: Ticker, "ticker-2line": Ticker2Line };
+  const LAYOUTS = { ticker: Ticker, "ticker-2line": Ticker2Line, bar: BarLayout, corner: CornerCard };
   const Layout = LAYOUTS[config.layout] || Ticker;
   return (
     <Positioned align={align} scale={scale}>
