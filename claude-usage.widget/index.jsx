@@ -224,8 +224,8 @@ const CornerCard = ({ logs, limits, config }) => {
   return (
     <div className={pill} style={{ flexDirection: "column", alignItems: "stretch", gap: 6, borderRadius: 14, width: 210, padding: "12px 16px" }}>
       <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <span className={label}>Claude · Today</span>
-        <span className={sub}>{new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
+        <span className={label}><span className={logo}>✳</span> Claude</span>
+        <span className={sub}>{new Date().toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}</span>
       </div>
       {logs.status === "ok" && (
         <span style={{ display: "contents" }}>
