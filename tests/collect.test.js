@@ -11,7 +11,10 @@ test("collect --mock prints a schema-conformant payload", () => {
   const out = execFileSync(process.execPath, [COLLECT, "--mock"], { encoding: "utf8" });
   const payload = JSON.parse(out);
   assert.ok(payload.generatedAt);
-  assert.equal(payload.config.layout, "ticker");
+  // config.layout reflects the live config.json on this machine (any of the
+  // four supported layouts), not a hardcoded default — asserting a specific
+  // value here would break every time someone picks a different layout.
+  assert.ok(["ticker", "ticker-2line", "bar", "corner"].includes(payload.config.layout));
   const claude = payload.providers.claude;
   assert.equal(claude.logs.status, "ok");
   assert.ok(claude.logs.today.costUsd > 0);

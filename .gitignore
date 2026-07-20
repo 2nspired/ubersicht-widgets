@@ -9,3 +9,7 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 .superpowers/
+
+# Store-submission build artifact — derived from claude-usage.widget/,
+# rebuild with: cd claude-usage.widget && zip -r ../claude-usage.widget.zip . -x "*.DS_Store"
+claude-usage.widget.zip
