@@ -1,0 +1,34 @@
+{
+  "providers": {
+    "claude": {
+      "logs": {
+        "status": "ok",
+        "today": { "costUsd": 4.82, "tokens": 2100000, "sessions": 14 },
+        "week": {
+          "costUsd": 21.4,
+          "days": [
+            { "date": "2026-07-13", "costUsd": 2.1, "tokens": 900000 },
+            { "date": "2026-07-14", "costUsd": 3.85, "tokens": 1650000 },
+            { "date": "2026-07-15", "costUsd": 2.8, "tokens": 1200000 },
+            { "date": "2026-07-16", "costUsd": 5.6, "tokens": 2400000 },
+            { "date": "2026-07-17", "costUsd": 1.75, "tokens": 750000 },
+            { "date": "2026-07-18", "costUsd": 4.55, "tokens": 1950000 },
+            { "date": "2026-07-19", "costUsd": 4.82, "tokens": 2100000 }
+          ]
+        },
+        "models": [
+          { "model": "claude-fable-5", "tokens": 1600000, "costUsd": 3.9 },
+          { "model": "claude-haiku-4-5", "tokens": 500000, "costUsd": 0.92 }
+        ]
+      },
+      "limits": {
+        "status": "ok",
+        "buckets": [
+          { "id": "session", "label": "Session", "pctUsed": 22, "resetsAt": "2026-07-19T16:30:00-07:00" },
+          { "id": "week_all", "label": "Week", "pctUsed": 13, "resetsAt": "2026-07-20T18:00:00-07:00" },
+          { "id": "week_fable", "label": "Fable", "pctUsed": 24, "resetsAt": "2026-07-20T18:00:00-07:00" }
+        ]
+      }
+    }
+  }
+}
