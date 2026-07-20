@@ -60,7 +60,7 @@ const Bolt = () => (
   </svg>
 );
 export const fmtEnergy = (n) => (
-  <span style={{ whiteSpace: "nowrap" }}><Bolt />{n ?? 0} kWh</span>
+  <span style={{ whiteSpace: "nowrap" }}><Bolt />{typeof n === "number" ? n : 0} kWh</span>
 );
 const joinParts = (parts) =>
   parts.filter(Boolean).map((part, i) => (
