@@ -1,6 +1,9 @@
 {
   "layout": "ticker",
-  "position": { "bottom": 8, "align": "center" },
+  "position": {
+    "bottom": 8,
+    "align": "right"
+  },
   "refreshSeconds": 60,
   "showCost": true,
   "showFable": "auto",

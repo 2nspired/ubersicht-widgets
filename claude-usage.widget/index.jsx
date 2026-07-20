@@ -9,9 +9,12 @@ export const className = `
   left: 0;
   right: 0;
   display: flex;
-  justify-content: center;
   pointer-events: none;
 `;
+
+// config.position.align: "left" | "center" | "right"
+const alignToJustify = (align) =>
+  align === "right" ? "flex-end" : align === "left" ? "flex-start" : "center";
 
 const GREEN = "#5ba97f", AMBER = "#d9a557", RED = "#d97757";
 
@@ -101,20 +104,31 @@ const Ticker = ({ logs, limits, config }) => {
   );
 };
 
+const Positioned = ({ align, children }) => (
+  <div style={{ display: "flex", width: "100%", justifyContent: alignToJustify(align), padding: "0 12px" }}>
+    {children}
+  </div>
+);
+
 export const render = ({ output }) => {
   let payload;
   try {
     payload = JSON.parse(output);
   } catch {
-    return <div className={pill}><span className={sub}>claude-usage: loading…</span></div>;
+    return <Positioned align="center"><div className={pill}><span className={sub}>claude-usage: loading…</span></div></Positioned>;
   }
   if (payload.error === "node-missing")
-    return <div className={pill}><span className={sub}>{payload.message}</span></div>;
+    return <Positioned align="center"><div className={pill}><span className={sub}>{payload.message}</span></div></Positioned>;
   if (payload.error)
-    return <div className={pill}><span className={sub}>claude-usage error: {payload.message}</span></div>;
+    return <Positioned align="center"><div className={pill}><span className={sub}>claude-usage error: {payload.message}</span></div></Positioned>;
 
   const { config } = payload;
+  const align = (config.position && config.position.align) || "center";
   const { logs, limits } = payload.providers.claude;
   // layout dispatch — more layouts added in Tasks 4 and 11
-  return <Ticker logs={logs} limits={limits} config={config} />;
+  return (
+    <Positioned align={align}>
+      <Ticker logs={logs} limits={limits} config={config} />
+    </Positioned>
+  );
 };
