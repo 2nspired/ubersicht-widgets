@@ -9,6 +9,7 @@ const DEFAULTS = {
   refreshSeconds: 60,
   showCost: true,
   showFable: "auto",
+  scale: 1,
   mock: false,
 };
 

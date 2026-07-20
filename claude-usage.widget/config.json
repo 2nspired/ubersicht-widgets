@@ -7,5 +7,6 @@
   "refreshSeconds": 60,
   "showCost": true,
   "showFable": "auto",
-  "mock": true
+  "mock": true,
+  "scale": 1.5
 }

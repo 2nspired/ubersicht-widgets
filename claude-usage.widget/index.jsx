@@ -104,9 +104,9 @@ const Ticker = ({ logs, limits, config }) => {
   );
 };
 
-const Positioned = ({ align, children }) => (
+const Positioned = ({ align, scale = 1, children }) => (
   <div style={{ display: "flex", width: "100%", justifyContent: alignToJustify(align), padding: "0 12px" }}>
-    {children}
+    <div style={{ zoom: scale }}>{children}</div>
   </div>
 );
 
@@ -124,10 +124,11 @@ export const render = ({ output }) => {
 
   const { config } = payload;
   const align = (config.position && config.position.align) || "center";
+  const scale = config.scale || 1;
   const { logs, limits } = payload.providers.claude;
   // layout dispatch — more layouts added in Tasks 4 and 11
   return (
-    <Positioned align={align}>
+    <Positioned align={align} scale={scale}>
       <Ticker logs={logs} limits={limits} config={config} />
     </Positioned>
   );
