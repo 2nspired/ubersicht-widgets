@@ -8,6 +8,8 @@ const DEFAULTS = {
   position: { bottom: 8, align: "center" },
   refreshSeconds: 60,
   showCost: true,
+  showTokens: true,
+  showEnergy: false,
   showFable: "auto",
   scale: 1,
   mock: false,

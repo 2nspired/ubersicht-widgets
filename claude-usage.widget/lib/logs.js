@@ -103,6 +103,22 @@ function costUsd(model, sums, pricing) {
 
 const totalTokens = (s) => s.input + s.output + s.cacheRead + s.cacheWrite5m + s.cacheWrite1h;
 
+// Rough estimates only — no official per-token energy figures exist. Derived from
+// public research on large-model inference (output decode dominates; input/prefill
+// ~10x cheaper; cache reads nearly free). Order-of-magnitude, not measurement.
+const WH_PER_MTOK = { input: 60, output: 600, cacheRead: 6, cacheWrite5m: 60, cacheWrite1h: 60 };
+
+// Per-class Wh per MTok -> kWh, analogous to costUsd but model-independent.
+function energyKwh(sums) {
+  return (
+    (sums.input * WH_PER_MTOK.input +
+      sums.output * WH_PER_MTOK.output +
+      sums.cacheRead * WH_PER_MTOK.cacheRead +
+      sums.cacheWrite5m * WH_PER_MTOK.cacheWrite5m +
+      sums.cacheWrite1h * WH_PER_MTOK.cacheWrite1h) / 1e9
+  );
+}
+
 function buildLogsSection(fileSummaries, now, pricing) {
   const dayKeys = [];
   for (let i = 6; i >= 0; i--) {
@@ -120,10 +136,11 @@ function buildLogsSection(fileSummaries, now, pricing) {
     if (file.days[todayKey]) sessions++;
     for (const [dayKey, day] of Object.entries(file.days)) {
       if (!dayKeys.includes(dayKey)) continue;
-      const slot = (perDay[dayKey] = perDay[dayKey] || { tokens: 0, costUsd: 0 });
+      const slot = (perDay[dayKey] = perDay[dayKey] || { tokens: 0, costUsd: 0, energyKwh: 0 });
       for (const [model, sums] of Object.entries(day.models)) {
         slot.tokens += totalTokens(sums);
         slot.costUsd += costUsd(model, sums, pricing) || 0;
+        slot.energyKwh += energyKwh(sums);
         if (dayKey === todayKey) {
           const tm = (todayModels[model] = todayModels[model] || { tokens: 0, costUsd: 0 });
           tm.tokens += totalTokens(sums);
@@ -139,11 +156,13 @@ function buildLogsSection(fileSummaries, now, pricing) {
     tokens: (perDay[date] || {}).tokens || 0,
   }));
   const today = days[6];
+  const todayEnergyRaw = (perDay[todayKey] || {}).energyKwh || 0;
+  const weekEnergyRaw = dayKeys.reduce((a, d) => a + ((perDay[d] || {}).energyKwh || 0), 0);
 
   return {
     status: "ok",
-    today: { costUsd: today.costUsd, tokens: today.tokens, sessions },
-    week: { costUsd: round2(days.reduce((a, d) => a + d.costUsd, 0)), days },
+    today: { costUsd: today.costUsd, tokens: today.tokens, sessions, energyKwh: roundEnergy(todayEnergyRaw) },
+    week: { costUsd: round2(days.reduce((a, d) => a + d.costUsd, 0)), days, energyKwh: roundEnergy(weekEnergyRaw) },
     models: Object.entries(todayModels)
       .map(([model, v]) => ({ model, tokens: v.tokens, costUsd: round2(v.costUsd) }))
       .sort((a, b) => b.tokens - a.tokens),
@@ -151,6 +170,9 @@ function buildLogsSection(fileSummaries, now, pricing) {
 }
 
 function round2(n) { return Math.round(n * 100) / 100; }
+// kWh estimates are tiny-magnitude; 2dp rounds anything under a hundredth to 0, so
+// fall back to 3dp below that threshold to keep the number legible.
+function roundEnergy(n) { return n < 0.01 ? Math.round(n * 1000) / 1000 : round2(n); }
 
 function startOfToday(now = new Date()) {
   const d = new Date(now);
@@ -197,4 +219,4 @@ async function collectLogs(opts = {}) {
   return buildLogsSection(summaries, now, PRICING);
 }
 
-module.exports = { parseLine, summarizeFile, findProjectDirs, listJsonlFiles, localDayKey, ZERO, costUsd, buildLogsSection, totalTokens, resolvePricingKey, summarizeFileCached, collectLogs };
+module.exports = { parseLine, summarizeFile, findProjectDirs, listJsonlFiles, localDayKey, ZERO, costUsd, buildLogsSection, totalTokens, resolvePricingKey, summarizeFileCached, collectLogs, energyKwh, WH_PER_MTOK };

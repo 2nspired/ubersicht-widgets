@@ -53,6 +53,8 @@ export const fmtCost = (n) =>
   `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 export const fmtTokens = (n) =>
   n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}k` : `${n}`;
+// Rough, order-of-magnitude estimate — see WH_PER_MTOK in lib/logs.js.
+export const fmtEnergy = (n) => `⚡ ${n ?? 0} kWh`;
 
 export const fmtReset = (iso, now = new Date()) => {
   if (!iso) return "";
@@ -86,13 +88,23 @@ const Ticker = ({ logs, limits, config }) => {
   const buckets = (limits.status === "ok" ? limits.buckets : []).filter(
     (b) => config.showFable !== false || b.id !== "week_fable"
   );
+  const tickerParts = [];
+  if (logs.status === "ok") {
+    if (config.showCost) tickerParts.push({ key: "cost", node: <span className={strong}>{fmtCost(logs.today.costUsd)}</span> });
+    if (config.showTokens !== false) tickerParts.push({ key: "tokens", node: fmtTokens(logs.today.tokens) });
+    if (config.showEnergy) tickerParts.push({ key: "energy", node: fmtEnergy(logs.today.energyKwh) });
+  }
   return (
     <div className={pill}>
       <span className={logo}>✳</span>
-      {logs.status === "ok" && (
+      {logs.status === "ok" && tickerParts.length > 0 && (
         <span className={sub}>
-          {config.showCost && <span className={strong}>{fmtCost(logs.today.costUsd)} </span>}
-          · {fmtTokens(logs.today.tokens)}
+          {tickerParts.map((p, i) => (
+            <span key={p.key} style={{ display: "contents" }}>
+              {i > 0 && " · "}
+              {p.node}
+            </span>
+          ))}
         </span>
       )}
       {logs.status === "ok" && buckets.length > 0 && <span className={divider} />}
@@ -115,18 +127,34 @@ const Ticker2Line = ({ logs, limits, config }) => {
   const buckets = (limits.status === "ok" ? limits.buckets : []).filter(
     (b) => config.showFable !== false || b.id !== "week_fable"
   );
+  const todayParts = [];
+  if (logs.status === "ok") {
+    if (config.showCost) todayParts.push({ key: "cost", node: <span className={strong}>{fmtCost(logs.today.costUsd)}</span> });
+    if (config.showTokens !== false) todayParts.push({ key: "tokens", node: `${fmtTokens(logs.today.tokens)} tok` });
+    todayParts.push({ key: "sessions", node: `${logs.today.sessions} sessions` });
+  }
   return (
     <div className={pill} style={{ flexDirection: "column", alignItems: "stretch", gap: 7, borderRadius: 16 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
         <span className={logo}>✳</span>
         {logs.status === "ok" && (
           <span className={sub}>
-            Today {config.showCost && <span className={strong}>{fmtCost(logs.today.costUsd)}</span>} ·{" "}
-            {fmtTokens(logs.today.tokens)} tok · {logs.today.sessions} sessions
+            Today{" "}
+            {todayParts.map((p, i) => (
+              <span key={p.key} style={{ display: "contents" }}>
+                {p.node}
+                {i < todayParts.length - 1 && " · "}
+              </span>
+            ))}
           </span>
         )}
-        {logs.status === "ok" && config.showCost && (
-          <span className={sub}>7d <span className={strong}>{fmtCost(logs.week.costUsd)}</span></span>
+        {logs.status === "ok" && (config.showCost || config.showEnergy) && (
+          <span className={sub}>
+            7d{" "}
+            {config.showCost && <span className={strong}>{fmtCost(logs.week.costUsd)}</span>}
+            {config.showCost && config.showEnergy && " · "}
+            {config.showEnergy && fmtEnergy(logs.week.energyKwh)}
+          </span>
         )}
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
@@ -172,7 +200,13 @@ const BarLayout = ({ logs, limits, config }) => {
           <span>
             <div className={label}>Today</div>
             <span className={strong} style={{ fontSize: 16 }}>{config.showCost ? fmtCost(logs.today.costUsd) : fmtTokens(logs.today.tokens)}</span>{" "}
-            <span className={sub}>{fmtTokens(logs.today.tokens)} tok · {logs.today.sessions} sess</span>
+            <span className={sub}>
+              {[
+                config.showTokens !== false && `${fmtTokens(logs.today.tokens)} tok`,
+                `${logs.today.sessions} sess`,
+                config.showEnergy && fmtEnergy(logs.today.energyKwh),
+              ].filter(Boolean).join(" · ")}
+            </span>
           </span>
           <span className={divider} style={{ margin: "0 18px" }} />
           <span>
@@ -232,7 +266,12 @@ const CornerCard = ({ logs, limits, config }) => {
         <span style={{ display: "contents" }}>
           <div>
             {config.showCost && <span className={strong} style={{ fontSize: 20 }}>{fmtCost(logs.today.costUsd)} </span>}
-            <span className={sub}>{fmtTokens(logs.today.tokens)} tok</span>
+            <span className={sub}>
+              {[
+                config.showTokens !== false && `${fmtTokens(logs.today.tokens)} tok`,
+                config.showEnergy && fmtEnergy(logs.today.energyKwh),
+              ].filter(Boolean).join(" · ")}
+            </span>
           </div>
           <Sparkline days={logs.week.days} width={178} />
         </span>

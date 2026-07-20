@@ -1,7 +1,7 @@
 // tests/pricing.test.js
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { costUsd, buildLogsSection, localDayKey } = require("../claude-usage.widget/lib/logs");
+const { costUsd, buildLogsSection, localDayKey, energyKwh, WH_PER_MTOK } = require("../claude-usage.widget/lib/logs");
 const pricing = require("../claude-usage.widget/lib/pricing.json");
 
 test("costUsd prices each token class per MTok", () => {
@@ -24,6 +24,26 @@ test("costUsd resolves dated model ids and bare aliases", () => {
   assert.equal(costUsd("<synthetic>", sums, pricing), null);
 });
 
+test("energyKwh estimates 1M output tokens at 0.6 kWh", () => {
+  const sums = { input: 0, output: 1e6, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 };
+  assert.equal(energyKwh(sums), 0.6);
+});
+
+test("energyKwh estimates 1M cacheRead tokens at 0.006 kWh", () => {
+  const sums = { input: 0, output: 0, cacheRead: 1e6, cacheWrite5m: 0, cacheWrite1h: 0 };
+  assert.equal(energyKwh(sums), 0.006);
+});
+
+test("energyKwh sums mixed token classes per their own Wh/MTok rate", () => {
+  const sums = { input: 1e6, output: 1e6, cacheRead: 1e6, cacheWrite5m: 1e6, cacheWrite1h: 1e6 };
+  // (60 + 600 + 6 + 60 + 60) Wh / 1000 = 0.786 kWh
+  const expected =
+    (WH_PER_MTOK.input + WH_PER_MTOK.output + WH_PER_MTOK.cacheRead + WH_PER_MTOK.cacheWrite5m + WH_PER_MTOK.cacheWrite1h) /
+    1000;
+  assert.equal(energyKwh(sums), expected);
+  assert.equal(energyKwh(sums), 0.786);
+});
+
 test("buildLogsSection aggregates today, week, models, sessions", () => {
   const now = new Date("2026-07-19T15:00:00");
   const today = localDayKey(now);
@@ -36,8 +56,10 @@ test("buildLogsSection aggregates today, week, models, sessions", () => {
   assert.equal(s.today.tokens, 1e6);
   assert.equal(s.today.costUsd, 10);
   assert.equal(s.today.sessions, 1); // only fileA has activity today
+  assert.equal(s.today.energyKwh, 0.06); // 1M input tokens * 60 Wh/MTok = 60 Wh = 0.06 kWh
   assert.equal(s.week.days.length, 7);
   assert.equal(s.week.days[6].date, today);
   assert.equal(s.week.costUsd, 10 + 20 + 1); // today fable 10 + yest fable 20 + yest haiku 1
+  assert.equal(s.week.energyKwh, 0.24); // today 0.06 + yest fable 0.12 + yest haiku 0.06
   assert.deepEqual(s.models.map((m) => m.model), ["claude-fable-5"]); // today only
 });

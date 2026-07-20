@@ -3,9 +3,10 @@
     "claude": {
       "logs": {
         "status": "ok",
-        "today": { "costUsd": 4.82, "tokens": 2100000, "sessions": 14 },
+        "today": { "costUsd": 4.82, "tokens": 2100000, "sessions": 14, "energyKwh": 0.42 },
         "week": {
           "costUsd": 21.4,
+          "energyKwh": 2.94,
           "days": [
             { "date": "2026-07-13", "costUsd": 2.1, "tokens": 900000 },
             { "date": "2026-07-14", "costUsd": 3.85, "tokens": 1650000 },

@@ -95,6 +95,8 @@ omitted falls back to the default shown below.
 | `position.align` | `"left"` \| `"center"` \| `"right"` | `"center"` | Horizontal placement. |
 | `refreshSeconds` | number | `60` | **Informational only** — see the callout below. |
 | `showCost` | boolean | `true` | Show the API-equivalent `$` estimate alongside token counts. Set `false` if you only want token counts. |
+| `showTokens` | boolean | `true` | Show token counts (e.g. `2.1M tok`). Set `false` to hide them, e.g. if you only care about cost and/or energy. |
+| `showEnergy` | boolean | `false` | Show an estimated energy figure (`⚡ 0.42 kWh`) alongside cost/tokens. See [Energy estimates](#energy-estimates) below for what this number does (and doesn't) mean. |
 | `showFable` | `"auto"` \| `false` | `"auto"` | Whether to show the Fable-specific weekly gauge (`week_fable`), when the usage endpoint reports one. `"auto"` shows it whenever present; `false` always hides it. |
 | `scale` | number | `1` | CSS zoom applied to the whole widget — handy for hi-DPI/4K displays where the default size reads small (e.g. `1.5`). |
 | `mock` | boolean | `false` | Render canned sample data (`lib/mock.json`) instead of reading real logs/credentials. Useful for previewing layouts without waiting on real usage. |
@@ -142,6 +144,18 @@ sent anywhere.
 > paid — your subscription is a flat fee. Think of it as a fun/useful gauge
 > of how much you're actually using Claude Code (and, frankly, a pretty
 > compelling argument for why the subscription is worth it).
+
+#### Energy estimates
+
+When `showEnergy` is on, the widget also shows an estimated `⚡ X kWh`
+figure. This is a **rough, order-of-magnitude estimate, not a
+measurement** — there are no official per-token energy figures published
+for these models. It's derived from public research on large-model
+inference (output/decode tokens dominate energy use; input/prefill tokens
+are roughly 10x cheaper; cache reads are nearly free), encoded as flat
+Wh-per-million-token coefficients in `WH_PER_MTOK` in `lib/logs.js`. Treat
+it the same way as the `$` figure above: a fun gauge of relative usage, not
+a meter you'd trust for a real accounting of watts drawn.
 
 ### Layer 2: subscription limit gauges
 

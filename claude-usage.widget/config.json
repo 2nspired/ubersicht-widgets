@@ -6,6 +6,8 @@
   },
   "refreshSeconds": 60,
   "showCost": true,
+  "showTokens": true,
+  "showEnergy": true,
   "showFable": "auto",
   "mock": false,
   "scale": 1.5
