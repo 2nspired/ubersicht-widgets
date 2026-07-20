@@ -1,0 +1,5 @@
+{"timestamp":"2026-07-19T10:00:00.000Z","message":{"model":"claude-fable-5","usage":{"input_tokens":100,"output_tokens":200,"cache_read_input_tokens":1000,"cache_creation_input_tokens":500,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":500}}}}
+{"timestamp":"2026-07-19T11:00:00.000Z","message":{"model":"claude-haiku-4-5","usage":{"input_tokens":50,"output_tokens":80,"cache_read_input_tokens":0,"cache_creation_input_tokens":300}}}
+{not json at all
+{"timestamp":"2026-07-19T11:05:00.000Z","type":"user","message":{"role":"user"}}
+{"timestamp":"2026-07-18T09:00:00.000Z","message":{"model":"claude-fable-5","usage":{"input_tokens":10,"output_tokens":20,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}
