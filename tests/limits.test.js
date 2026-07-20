@@ -1,7 +1,32 @@
-const { test } = require("node:test");
+const { test, beforeEach } = require("node:test");
 const assert = require("node:assert");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
 const { normalizeBuckets, collectLimits } = require("../claude-usage.widget/lib/limits");
 const fixture = require("./fixtures/usage-response.json");
+
+function tmpCachePath() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cuw-limits-cache-"));
+  return path.join(dir, "limits.json");
+}
+
+function writeCache(cachePath, fetchedAt, result) {
+  fs.mkdirSync(path.dirname(cachePath), { recursive: true });
+  fs.writeFileSync(cachePath, JSON.stringify({ fetchedAt, result }));
+}
+
+// Redirect the default cache location (used by tests below that don't pass
+// opts.cachePath explicitly) into a *fresh* isolated temp dir before every
+// test, so running the suite never reads/writes the developer's real
+// ~/.cache/claude-usage-widget/limits.json, and so that a cache file written
+// by one test (e.g. a successful-fetch test) can never leak into and be
+// read as a "fresh cache hit" by an unrelated test that runs after it.
+beforeEach(() => {
+  process.env.CLAUDE_USAGE_WIDGET_CACHE_DIR = fs.mkdtempSync(
+    path.join(os.tmpdir(), "cuw-limits-default-cache-")
+  );
+});
 
 test("normalizeBuckets maps the real captured response", () => {
   const buckets = normalizeBuckets(fixture);
@@ -97,5 +122,95 @@ test("collectLimits short-circuits to unavailable when CLAUDE_USAGE_WIDGET_NO_KE
   } finally {
     if (prev === undefined) delete process.env.CLAUDE_USAGE_WIDGET_NO_KEYCHAIN;
     else process.env.CLAUDE_USAGE_WIDGET_NO_KEYCHAIN = prev;
+  }
+});
+
+test("collectLimits returns a fresh cache hit without touching fetch", async () => {
+  const cachePath = tmpCachePath();
+  const now = 1_000_000_000;
+  const cachedResult = { status: "ok", buckets: [{ id: "session", label: "Session", pctUsed: 10, resetsAt: "X" }] };
+  writeCache(cachePath, now - 60_000, cachedResult); // 60s old, well within default 300s ttl
+
+  const result = await collectLimits({
+    cachePath,
+    now,
+    token: "should-not-be-used",
+    fetch: async () => { throw new Error("fetch should not be called on a fresh cache hit"); },
+  });
+
+  assert.deepEqual(result, { ...cachedResult, cached: true });
+});
+
+test("collectLimits falls back to a stale cache when the cache is expired and the live fetch fails", async () => {
+  const cachePath = tmpCachePath();
+  const now = 1_000_000_000;
+  const cachedResult = { status: "ok", buckets: [{ id: "session", label: "Session", pctUsed: 42, resetsAt: "X" }] };
+  writeCache(cachePath, now - 10 * 60_000, cachedResult); // 10 minutes old, past the 300s ttl
+
+  const result = await collectLimits({
+    cachePath,
+    now,
+    ttlSeconds: 300,
+    token: "fake-token",
+    fetch: async () => { throw new Error("network down"); },
+  });
+
+  assert.deepEqual(result, { ...cachedResult, cached: true, stale: true });
+});
+
+test("collectLimits refreshes and overwrites an expired cache on a successful fetch", async () => {
+  const cachePath = tmpCachePath();
+  const now = 1_000_000_000;
+  const staleResult = { status: "ok", buckets: [{ id: "session", label: "Session", pctUsed: 1, resetsAt: "old" }] };
+  writeCache(cachePath, now - 10 * 60_000, staleResult);
+
+  const result = await collectLimits({
+    cachePath,
+    now,
+    ttlSeconds: 300,
+    token: "fake-token",
+    fetch: async () => fixture,
+  });
+
+  assert.equal(result.status, "ok");
+  assert.deepEqual(result.buckets.map((b) => b.id), ["session", "week_all", "week_fable"]);
+  assert.equal(result.cached, undefined);
+
+  const onDisk = JSON.parse(fs.readFileSync(cachePath, "utf8"));
+  assert.equal(onDisk.fetchedAt, now);
+  assert.deepEqual(onDisk.result.buckets.map((b) => b.id), ["session", "week_all", "week_fable"]);
+});
+
+test("collectLimits with no prior cache and a failure stays unavailable (no stale fallback to invent)", async () => {
+  const cachePath = tmpCachePath(); // fresh temp dir, no file written
+  const now = 1_000_000_000;
+
+  const noToken = await collectLimits({ cachePath, now, token: null });
+  assert.deepEqual(noToken, { status: "unavailable", message: "no Claude Code credentials found" });
+
+  const emptyBuckets = await collectLimits({
+    cachePath,
+    now,
+    token: "fake-token",
+    fetch: async () => ({}),
+  });
+  assert.deepEqual(emptyBuckets, { status: "unavailable", message: "unrecognized usage response" });
+});
+
+test("collectLimits honors CLAUDE_USAGE_WIDGET_CACHE_DIR when opts.cachePath is omitted", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cuw-limits-envdir-"));
+  const prev = process.env.CLAUDE_USAGE_WIDGET_CACHE_DIR;
+  process.env.CLAUDE_USAGE_WIDGET_CACHE_DIR = dir;
+  try {
+    const result = await collectLimits({
+      now: 1_000_000_000,
+      token: "fake-token",
+      fetch: async () => fixture,
+    });
+    assert.equal(result.status, "ok");
+    assert.ok(fs.existsSync(path.join(dir, "limits.json")), "cache file written under env-provided dir");
+  } finally {
+    if (prev === undefined) delete process.env.CLAUDE_USAGE_WIDGET_CACHE_DIR;
+    else process.env.CLAUDE_USAGE_WIDGET_CACHE_DIR = prev;
   }
 });

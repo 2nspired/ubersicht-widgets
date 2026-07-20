@@ -197,9 +197,42 @@ function normalizeBuckets(raw) {
   return out;
 }
 
+// The unofficial usage endpoint 429s under frequent calls (60s widget
+// refresh + testing), so results are cached to disk with a TTL. Cache file
+// shape: { fetchedAt: <ms epoch>, result: { status: "ok", buckets } }.
+// readCacheFile() is tolerant of a missing/corrupt/malformed-shape file and
+// simply returns null in those cases (never throws).
+function readCacheFile(cachePath) {
+  try {
+    const raw = JSON.parse(fs.readFileSync(cachePath, "utf8"));
+    if (
+      raw &&
+      typeof raw === "object" &&
+      typeof raw.fetchedAt === "number" &&
+      raw.result &&
+      typeof raw.result === "object" &&
+      raw.result.status === "ok" &&
+      Array.isArray(raw.result.buckets)
+    ) {
+      return raw;
+    }
+  } catch {}
+  return null;
+}
+
+function writeCacheFile(cachePath, entry) {
+  try {
+    fs.mkdirSync(path.dirname(cachePath), { recursive: true });
+    fs.writeFileSync(cachePath, JSON.stringify(entry));
+  } catch {}
+}
+
 // `token`/`fetch` overrides exist for tests (mirrors collectLogs's options
 // pattern in logs.js); collect.js's real call site always uses collectLimits()
 // with no arguments, which falls through to the real readAccessToken()/fetchUsageRaw().
+//
+// opts.cachePath / opts.ttlSeconds / opts.now support the caching+throttle
+// layer below (see readCacheFile doc comment for the on-disk shape).
 //
 // NOTE: `token` intentionally has no default value in the parameter list.
 // Default parameter expressions are evaluated during argument binding,
@@ -208,21 +241,61 @@ function normalizeBuckets(raw) {
 // Keychain lookup even when the seam is active. Instead the default is
 // applied lazily inside the body, after the guard has had a chance to
 // short-circuit.
-async function collectLimits({ token, fetch = fetchUsageRaw } = {}) {
+async function collectLimits(opts = {}) {
   // Test isolation seam, same spirit as CLAUDE_USAGE_WIDGET_HOME in logs.js:
   // lets the test suite force this layer to "unavailable" without ever
   // touching macOS Keychain or the network, regardless of what credentials
-  // exist on the developer's machine.
+  // exist on the developer's machine. Checked before anything else,
+  // including the cache, so it stays a hard kill switch.
   if (process.env.CLAUDE_USAGE_WIDGET_NO_KEYCHAIN === "1") {
     return { status: "unavailable", message: "credentials disabled by env" };
   }
-  if (token === undefined) token = readAccessToken();
-  if (!token) return { status: "unavailable", message: "no Claude Code credentials found" };
 
-  const raw = await fetch(token);
+  const nowOpt = opts.now === undefined ? Date.now : opts.now;
+  const now = typeof nowOpt === "function" ? nowOpt() : nowOpt;
+  const ttlSeconds = opts.ttlSeconds === undefined ? 300 : opts.ttlSeconds;
+  const cacheDir =
+    process.env.CLAUDE_USAGE_WIDGET_CACHE_DIR ||
+    path.join(os.homedir(), ".cache", "claude-usage-widget");
+  const cachePath = opts.cachePath || path.join(cacheDir, "limits.json");
+
+  const cacheEntry = readCacheFile(cachePath);
+  if (cacheEntry && now - cacheEntry.fetchedAt < ttlSeconds * 1000) {
+    // Fresh cache: return immediately, no Keychain/network access at all.
+    return { ...cacheEntry.result, cached: true };
+  }
+
+  // staleFallback() is the shared "any failure past this point" handler: if
+  // we have a previously-good (even expired) cache, degrade to it rather
+  // than to a hard "unavailable"/thrown error. Returns null when there's no
+  // cache to fall back to, so callers know to preserve prior behavior.
+  const staleFallback = () =>
+    cacheEntry ? { ...cacheEntry.result, cached: true, stale: true } : null;
+
+  let { token } = opts;
+  if (token === undefined) token = readAccessToken();
+  if (!token) {
+    return staleFallback() || { status: "unavailable", message: "no Claude Code credentials found" };
+  }
+
+  const fetch = opts.fetch || fetchUsageRaw;
+  let raw;
+  try {
+    raw = await fetch(token);
+  } catch (err) {
+    const fallback = staleFallback();
+    if (fallback) return fallback;
+    throw err;
+  }
+
   const buckets = normalizeBuckets(raw);
-  if (buckets.length === 0) return { status: "unavailable", message: "unrecognized usage response" };
-  return { status: "ok", buckets };
+  if (buckets.length === 0) {
+    return staleFallback() || { status: "unavailable", message: "unrecognized usage response" };
+  }
+
+  const result = { status: "ok", buckets };
+  writeCacheFile(cachePath, { fetchedAt: now, result });
+  return result;
 }
 
 module.exports = { readAccessToken, extractToken, fetchUsageRaw, normalizeBuckets, collectLimits };

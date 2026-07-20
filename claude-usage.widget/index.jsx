@@ -98,6 +98,7 @@ const Ticker = ({ logs, limits, config }) => {
       {buckets.map((b) => (
         <Gauge key={b.id} label={b.label} pctUsed={b.pctUsed} resetsAt={b.resetsAt} />
       ))}
+      {limits.stale && <span className={sub} style={{ opacity: 0.6 }}>cached</span>}
       {logs.status !== "ok" && limits.status !== "ok" && (
         <span className={sub}>claude-usage: no data ({logs.status}/{limits.status})</span>
       )}
@@ -138,6 +139,7 @@ const Ticker2Line = ({ logs, limits, config }) => {
             {fmtReset(b.resetsAt)}
           </span>
         ))}
+        {limits.stale && <span className={sub} style={{ opacity: 0.6 }}>cached</span>}
       </div>
     </div>
   );
@@ -163,35 +165,41 @@ const BarLayout = ({ logs, limits, config }) => {
     (b) => config.showFable !== false || b.id !== "week_fable"
   );
   return (
-    <div className={pill} style={{ borderRadius: 14, gap: 0 }}>
+    <div className={pill} style={{ padding: "10px 24px", borderRadius: 14, gap: 0 }}>
       {logs.status === "ok" && (
-        <>
+        <span style={{ display: "contents" }}>
           <span>
             <div className={label}>Today</div>
             <span className={strong} style={{ fontSize: 16 }}>{config.showCost ? fmtCost(logs.today.costUsd) : fmtTokens(logs.today.tokens)}</span>{" "}
             <span className={sub}>{fmtTokens(logs.today.tokens)} tok · {logs.today.sessions} sess</span>
           </span>
-          <span className={divider} style={{ margin: "0 16px" }} />
+          <span className={divider} style={{ margin: "0 18px" }} />
           <span>
             <div className={label}>7-day{config.showCost ? ` · ${fmtCost(logs.week.costUsd)}` : ""}</div>
-            <Sparkline days={logs.week.days} />
+            <Sparkline days={logs.week.days} width={7 * 11} />
           </span>
-          <span className={divider} style={{ margin: "0 16px" }} />
-          <span>
-            <div className={label}>Models</div>
-            <span className={sub}>
-              {logs.models.slice(0, 2).map((m, i) => {
-                const total = logs.models.reduce((a, x) => a + x.tokens, 0) || 1;
-                return (
-                  <span key={m.model}>{i > 0 && " · "}{m.model.replace("claude-", "")}{" "}
-                    <span className={strong}>{Math.round((m.tokens / total) * 100)}%</span>
-                  </span>
-                );
-              })}
+          {logs.models.length > 0 && (
+            <span style={{ display: "contents" }}>
+              <span className={divider} style={{ margin: "0 18px" }} />
+              <span>
+                <div className={label}>Models</div>
+                <span className={sub}>
+                  {logs.models.length === 1
+                    ? logs.models[0].model.replace("claude-", "")
+                    : logs.models.slice(0, 2).map((m, i) => {
+                        const total = logs.models.reduce((a, x) => a + x.tokens, 0) || 1;
+                        return (
+                          <span key={m.model}>{i > 0 && " · "}{m.model.replace("claude-", "")}{" "}
+                            <span className={strong}>{Math.round((m.tokens / total) * 100)}%</span>
+                          </span>
+                        );
+                      })}
+                </span>
+              </span>
             </span>
-          </span>
-          {buckets.length > 0 && <span className={divider} style={{ margin: "0 16px" }} />}
-        </>
+          )}
+          {buckets.length > 0 && <span className={divider} style={{ margin: "0 18px" }} />}
+        </span>
       )}
       <span style={{ display: "flex", gap: 14 }}>
         {buckets.map((b) => (
@@ -203,6 +211,7 @@ const BarLayout = ({ logs, limits, config }) => {
             </span>
           </span>
         ))}
+        {limits.stale && <span className={sub} style={{ opacity: 0.6 }}>cached</span>}
       </span>
     </div>
   );
@@ -219,13 +228,13 @@ const CornerCard = ({ logs, limits, config }) => {
         <span className={sub}>{new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
       </div>
       {logs.status === "ok" && (
-        <>
+        <span style={{ display: "contents" }}>
           <div>
             {config.showCost && <span className={strong} style={{ fontSize: 20 }}>{fmtCost(logs.today.costUsd)} </span>}
             <span className={sub}>{fmtTokens(logs.today.tokens)} tok</span>
           </div>
           <Sparkline days={logs.week.days} width={178} />
-        </>
+        </span>
       )}
       {buckets.map((b) => (
         <div key={b.id}>
@@ -236,6 +245,7 @@ const CornerCard = ({ logs, limits, config }) => {
           </span>
         </div>
       ))}
+      {limits.stale && <span className={sub} style={{ opacity: 0.6 }}>cached</span>}
     </div>
   );
 };
