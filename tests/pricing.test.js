@@ -14,6 +14,16 @@ test("costUsd returns null for unknown models", () => {
   assert.equal(costUsd("mystery-model", { input: 1e6, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 }, pricing), null);
 });
 
+test("costUsd resolves dated model ids and bare aliases", () => {
+  const sums = { input: 1e6, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 };
+  assert.equal(costUsd("claude-haiku-4-5-20251001", sums, pricing), 1); // dated suffix stripped
+  assert.equal(costUsd("fable", sums, pricing), 10);   // alias → claude-fable-5
+  assert.equal(costUsd("sonnet", sums, pricing), 3);   // alias → claude-sonnet-5
+  assert.equal(costUsd("haiku", sums, pricing), 1);    // alias → claude-haiku-4-5
+  assert.equal(costUsd("opus", sums, pricing), 5);     // alias → claude-opus-4-8
+  assert.equal(costUsd("<synthetic>", sums, pricing), null);
+});
+
 test("buildLogsSection aggregates today, week, models, sessions", () => {
   const now = new Date("2026-07-19T15:00:00");
   const today = localDayKey(now);

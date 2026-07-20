@@ -30,6 +30,21 @@ function localDayKey(d) {
 
 const ZERO = () => ({ input: 0, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 });
 
+const MODEL_ALIASES = {
+  fable: "claude-fable-5",
+  sonnet: "claude-sonnet-5",
+  haiku: "claude-haiku-4-5",
+  opus: "claude-opus-4-8",
+};
+
+function resolvePricingKey(model, pricing) {
+  if (pricing[model]) return model;
+  const undated = model.replace(/-\d{8}$/, "");
+  if (pricing[undated]) return undated;
+  if (MODEL_ALIASES[model] && pricing[MODEL_ALIASES[model]]) return MODEL_ALIASES[model];
+  return null;
+}
+
 function summarizeFile(filePath) {
   const days = {};
   const text = fs.readFileSync(filePath, "utf8");
@@ -73,8 +88,9 @@ function listJsonlFiles(projectsDir) {
 }
 
 function costUsd(model, sums, pricing) {
-  const r = pricing[model];
-  if (!r) return null;
+  const key = resolvePricingKey(model, pricing);
+  if (!key) return null;
+  const r = pricing[key];
   return (
     (sums.input * r.input +
       sums.output * r.output +
@@ -135,4 +151,4 @@ function buildLogsSection(fileSummaries, now, pricing) {
 
 function round2(n) { return Math.round(n * 100) / 100; }
 
-module.exports = { parseLine, summarizeFile, findProjectDirs, listJsonlFiles, localDayKey, ZERO, costUsd, buildLogsSection, totalTokens };
+module.exports = { parseLine, summarizeFile, findProjectDirs, listJsonlFiles, localDayKey, ZERO, costUsd, buildLogsSection, totalTokens, resolvePricingKey };
