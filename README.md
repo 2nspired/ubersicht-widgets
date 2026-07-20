@@ -134,9 +134,10 @@ existing Claude Code OAuth token — it never asks you to log in separately.
   password, and the token itself never leaves your machine except in the
   one HTTPS request described below.
 - **Caching:** results are cached for 5 minutes in
-  `~/.cache/claude-usage-widget/limits.json`. If the endpoint hiccups or
-  returns a 429, the widget falls back to the last good cached result
-  (marked `stale`) rather than blanking the gauges.
+  `~/.cache/claude-usage-widget/limits.json`. Normal cache hits (fresh data
+  within 5 minutes) show no indicator. If the endpoint hiccups or returns a
+  429, the widget falls back to the last good cached result (marked `stale`)
+  and shows a small "cached" label in the UI rather than blanking the gauges.
 - **This endpoint is unofficial and undocumented.** It's the same one
   Claude Code's CLI uses internally, but Anthropic could change or remove it
   without notice. If it ever breaks, the gauges disappear and the rest of
@@ -155,11 +156,11 @@ Keychain entries is entirely local and read-only.
 
 | Symptom | Likely cause |
 |---|---|
-| No limit gauges, but cost/tokens show fine | Not logged into Claude Code (`claude login`), or you clicked "Deny" on the Keychain prompt — delete the stale Keychain entry and re-run `claude login` to get a fresh prompt, or set `CLAUDE_USAGE_WIDGET_NO_KEYCHAIN=1` if you're intentionally opting out. |
+| No limit gauges, but cost/tokens show fine | Not logged into Claude Code (`claude login`), or you clicked "Deny" on the Keychain prompt — delete the stale Keychain entry and re-run `claude login` to get a fresh prompt, or set `CLAUDE_USAGE_WIDGET_NO_KEYCHAIN=1` if you're intentionally opting out. On first run (before any cache exists), the endpoint may return HTTP 429 (rate-limited); remedy: wait a minute or two for the rate limit to clear, then refresh — once one fetch succeeds, cache prevents recurrence. |
 | Cost shows `$0.00` (or lower than expected) for a model you know you used | That model id isn't in `lib/pricing.json` yet — `costUsd` silently treats unknown models as `$0`. Add a pricing entry (see the table's `input`/`output`/`cacheRead`/`cacheWrite5m`/`cacheWrite1h` columns, all $/MTok) keyed by the model id or a short alias. |
 | Nothing renders at all / widget area is blank | Node.js isn't installed, or isn't on Übersicht's minimal `PATH`. `run.sh` checks `node`, `/opt/homebrew/bin/node`, and `/usr/local/bin/node` in order and prints a `node-missing` message if none are found — check Übersicht's console/log for that message, then `brew install node` or install from nodejs.org. |
 | Both cost and gauges say "no data" | No Claude Code logs found under any `~/.claude*/projects` — either you haven't used Claude Code yet, or `CLAUDE_USAGE_WIDGET_HOME` is pointed somewhere unexpected. |
-| Widget shows stale/old-looking numbers | The limits layer serves a cached result (look for the small "cached" label) for up to 5 minutes, or longer if the endpoint is failing and it's falling back to stale data — this is intentional, not a bug. |
+| Widget shows stale/old-looking numbers | Normal 5-minute cache hits show no indicator. If you see a small "cached" label, the limits endpoint is currently unreachable or rate-limited (HTTP 429), and the widget is showing the last-known gauges instead. This is intentional fallback behavior, not a bug. |
 
 ## Development
 

@@ -71,9 +71,11 @@ concept (e.g. a pay-as-you-go API key with no quota) could ship `logs` only.
 is what `index.jsx`'s `Gauge`/bar-rendering code consumes across all four
 layouts, so any provider's limits section should normalize into it (see
 `normalizeBuckets()` in `lib/limits.js` for a worked example of mapping an
-arbitrary upstream response onto this shape). `cached`/`stale` are optional
-metadata flags the UI uses to show a small "cached" indicator; omit them if
-your provider doesn't cache.
+arbitrary upstream response onto this shape). `stale` is an optional metadata
+flag the UI uses to show a small "cached" indicator (only when `true`,
+indicating the endpoint failed and we're showing last-known gauges);
+`cached` is informational metadata only. Omit both if your provider doesn't
+cache.
 
 ### Status semantics
 
