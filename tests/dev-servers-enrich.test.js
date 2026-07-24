@@ -2,7 +2,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
 const {
-  parseEtime, formatAge, parseGitHead, findProjectRoot, parsePs, parseCwds, parseTunnels,
+  parseEtime, formatAge, parseGitHead, readBranch, findProjectRoot, parsePs, parseCwds, parseTunnels,
 } = require("../dev-servers.widget/lib/enrich");
 
 test("parseEtime handles mm:ss, hh:mm:ss, d-hh:mm:ss", () => {
@@ -25,6 +25,21 @@ test("parseGitHead returns branch for ref, short sha for detached, null otherwis
   assert.equal(parseGitHead("ref: refs/heads/fix/auth-flow\n"), "fix/auth-flow");
   assert.equal(parseGitHead("a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2\n"), "a1b2c3d");
   assert.equal(parseGitHead("weird"), null);
+});
+
+test("readBranch reads .git/HEAD and returns branch name via parseGitHead", () => {
+  const readFile = () => "ref: refs/heads/main\n";
+  assert.equal(readBranch("/repo", { readFile }), "main");
+});
+
+test("readBranch never throws: returns null when readFile fails", () => {
+  const readFile = () => { throw new Error("ENOENT"); };
+  assert.equal(readBranch("/repo", { readFile }), null);
+});
+
+test("readBranch returns short sha for detached HEAD", () => {
+  const readFile = () => "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2\n";
+  assert.equal(readBranch("/repo", { readFile }), "a1b2c3d");
 });
 
 test("findProjectRoot walks up to nearest .git/package.json, never past HOME or /", () => {
