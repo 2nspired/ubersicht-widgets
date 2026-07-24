@@ -22,3 +22,15 @@ f21
 n[::1]:8080
 f22
 nlocalhost:8081
+p800
+cDiscord Helper (Renderer)
+f9
+n*:6463
+p900
+cfigma_agent
+f9
+n*:44950
+p950
+cLogiPluginService
+f9
+n*:49255

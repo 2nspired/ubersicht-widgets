@@ -38,6 +38,14 @@ test("filterNoise drops denylisted commands (case-insensitive prefix) and denyli
   assert.ok(kept.some((r) => r.command === "postgres"));
 });
 
+test("filterNoise drops app-helper noise found via live smoke test (Discord, Figma, Logi)", () => {
+  const rows = dedupe(parseLsof(FIXTURE));
+  const kept = filterNoise(rows);
+  assert.ok(!kept.some((r) => r.command === "Discord Helper (Renderer)"));
+  assert.ok(!kept.some((r) => r.command === "figma_agent"));
+  assert.ok(!kept.some((r) => r.command === "LogiPluginService"));
+});
+
 test("filterNoise honors config ignoreProcesses and ignorePorts", () => {
   const rows = [
     { pid: 1, command: "node", port: 3000, ports: [3000] },

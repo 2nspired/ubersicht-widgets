@@ -10,6 +10,7 @@ const DENY_PROCESSES = [
   "google", "chrome", "safari", "arc", "firefox", "brave", "spotify",
   "dropbox", "onedrive", "creative", "adobe", "logioption", "raycast",
   "uebersicht", "übersicht",
+  "discord", "figma_agent", "logipluginservice",
 ];
 
 // Ports that are always system noise (AirPlay Receiver holds 5000/7000).
