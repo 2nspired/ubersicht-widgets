@@ -34,3 +34,7 @@ p950
 cLogiPluginService
 f9
 n*:49255
+p980
+cnode-arm64
+f10
+n*:41416

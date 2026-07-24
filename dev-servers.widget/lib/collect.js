@@ -55,7 +55,7 @@ async function main() {
     return;
   }
 
-  const { parseLsof, dedupe, filterNoise } = require("./ports");
+  const { parseLsof, dedupe, filterNoise, applyConfigIgnores } = require("./ports");
   const { parseDockerPs, mergeDocker } = require("./docker");
   const enrich = require("./enrich");
   const { probeAll } = require("./health");
@@ -80,6 +80,11 @@ async function main() {
     if (existing) existing.kind = "tunnel";
     else rows.push({ ...t, port: null, ports: [] });
   }
+
+  // Config ignores apply to the fully assembled row set (process + docker +
+  // tunnel), not just the raw lsof scan — otherwise ignorePorts/ignoreProcesses
+  // silently wouldn't affect docker/tunnel rows appended above.
+  rows = applyConfigIgnores(rows, config);
 
   const pids = rows.map((r) => r.pid).filter((p) => Number.isInteger(p));
   const [psOut, cwdOut] = pids.length

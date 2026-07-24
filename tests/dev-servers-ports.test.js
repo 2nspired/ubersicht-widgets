@@ -3,7 +3,7 @@ const { test } = require("node:test");
 const assert = require("node:assert");
 const fs = require("node:fs");
 const path = require("node:path");
-const { parseLsof, dedupe, filterNoise } = require("../dev-servers.widget/lib/ports");
+const { parseLsof, dedupe, filterNoise, applyConfigIgnores } = require("../dev-servers.widget/lib/ports");
 
 const FIXTURE = fs.readFileSync(path.join(__dirname, "fixtures", "lsof-listen.txt"), "utf8");
 
@@ -34,6 +34,7 @@ test("filterNoise drops denylisted commands (case-insensitive prefix) and denyli
   const kept = filterNoise(rows);
   assert.ok(!kept.some((r) => r.command === "Google Chrome"));
   assert.ok(!kept.some((r) => r.command === "ControlCe")); // its only port (7000) is denied too
+  assert.ok(!kept.some((r) => r.port === 41416)); // Übersicht's own server port
   assert.ok(kept.some((r) => r.pid === 344));
   assert.ok(kept.some((r) => r.command === "postgres"));
 });
@@ -57,4 +58,29 @@ test("filterNoise honors config ignoreProcesses and ignorePorts", () => {
   const partial = kept.find((r) => r.pid === 3);
   assert.deepEqual(partial.ports, [6666]); // denied port removed, row kept
   assert.equal(partial.port, 6666);
+});
+
+test("applyConfigIgnores drops a docker row when all its ports are ignored", () => {
+  const rows = [
+    { kind: "docker", command: "postgres:16", name: "acme-db", port: 5432, ports: [5432] },
+  ];
+  const kept = applyConfigIgnores(rows, { ignorePorts: [5432] });
+  assert.equal(kept.length, 0);
+});
+
+test("applyConfigIgnores drops a docker row when its name matches ignoreProcesses", () => {
+  const rows = [
+    { kind: "docker", command: "postgres:16", name: "acme-db", port: 5432, ports: [5432] },
+  ];
+  const kept = applyConfigIgnores(rows, { ignoreProcesses: ["acme-db"] });
+  assert.equal(kept.length, 0);
+});
+
+test("applyConfigIgnores drops a portless tunnel row via ignoreProcesses, keeps it when only ignorePorts is set", () => {
+  const rows = [{ kind: "tunnel", command: "ngrok", ports: [] }];
+  const droppedByName = applyConfigIgnores(rows, { ignoreProcesses: ["ngrok"] });
+  assert.equal(droppedByName.length, 0);
+
+  const keptWhenOnlyPortsIgnored = applyConfigIgnores(rows, { ignorePorts: [9999] });
+  assert.equal(keptWhenOnlyPortsIgnored.length, 1); // empty ports never match a port-based ignore
 });

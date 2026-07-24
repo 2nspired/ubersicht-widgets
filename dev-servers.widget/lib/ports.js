@@ -14,7 +14,9 @@ const DENY_PROCESSES = [
 ];
 
 // Ports that are always system noise (AirPlay Receiver holds 5000/7000).
-const DENY_PORTS = [5000, 7000];
+// 41416 is Übersicht's own built-in server port — this widget always runs
+// under Übersicht, so it's guaranteed noise and breaks hide-when-empty.
+const DENY_PORTS = [5000, 7000, 41416];
 
 // Parses `lsof -nP -iTCP -sTCP:LISTEN -Fpcn` field output: p<pid>, c<command>,
 // f<fd>, n<addr:port>. Field mode is used because the columnar output can't be
@@ -71,4 +73,31 @@ function filterNoise(rows, config = {}) {
     );
 }
 
-module.exports = { parseLsof, dedupe, filterNoise, DENY_PROCESSES, DENY_PORTS };
+// Applies user-level config ignores to the fully assembled row list (process
+// + docker + tunnel rows). Unlike filterNoise, this never strips individual
+// ports from a row — it only drops a whole row, and only when every one of
+// its ports is ignored (a row with no ports, e.g. a tunnel, never matches on
+// ports alone) or when its command/name starts with an ignored process name.
+function applyConfigIgnores(rows, config = {}) {
+  const ignorePorts = new Set(config.ignorePorts || []);
+  const ignoreProc = (config.ignoreProcesses || []).map((s) => String(s).toLowerCase());
+  return rows.filter((r) => {
+    const ports = r.ports || [];
+    const allPortsIgnored = ports.length > 0 && ports.every((p) => ignorePorts.has(p));
+    const nameMatches = ignoreProc.some(
+      (d) =>
+        (r.command && String(r.command).toLowerCase().startsWith(d)) ||
+        (r.name && String(r.name).toLowerCase().startsWith(d))
+    );
+    return !(allPortsIgnored || nameMatches);
+  });
+}
+
+module.exports = {
+  parseLsof,
+  dedupe,
+  filterNoise,
+  applyConfigIgnores,
+  DENY_PROCESSES,
+  DENY_PORTS,
+};
