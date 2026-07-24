@@ -14,9 +14,10 @@ const DENY_PROCESSES = [
 ];
 
 // Ports that are always system noise (AirPlay Receiver holds 5000/7000).
-// 41416 is Übersicht's own built-in server port — this widget always runs
-// under Übersicht, so it's guaranteed noise and breaks hide-when-empty.
-const DENY_PORTS = [5000, 7000, 41416];
+// 41416 and 41417 are Übersicht's own built-in server ports (main + websocket)
+// — this widget always runs under Übersicht, so both are guaranteed noise and
+// break hide-when-empty.
+const DENY_PORTS = [5000, 7000, 41416, 41417];
 
 // Parses `lsof -nP -iTCP -sTCP:LISTEN -Fpcn` field output: p<pid>, c<command>,
 // f<fd>, n<addr:port>. Field mode is used because the columnar output can't be

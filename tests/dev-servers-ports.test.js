@@ -34,7 +34,11 @@ test("filterNoise drops denylisted commands (case-insensitive prefix) and denyli
   const kept = filterNoise(rows);
   assert.ok(!kept.some((r) => r.command === "Google Chrome"));
   assert.ok(!kept.some((r) => r.command === "ControlCe")); // its only port (7000) is denied too
-  assert.ok(!kept.some((r) => r.port === 41416)); // Übersicht's own server port
+  // Übersicht's own server holds both 41416 (main) and 41417 (websocket) on
+  // the same pid — both denied, so the whole row is dropped, not just one port.
+  assert.ok(!kept.some((r) => r.pid === 980));
+  assert.ok(!kept.some((r) => r.ports.includes(41416)));
+  assert.ok(!kept.some((r) => r.ports.includes(41417)));
   assert.ok(kept.some((r) => r.pid === 344));
   assert.ok(kept.some((r) => r.command === "postgres"));
 });
