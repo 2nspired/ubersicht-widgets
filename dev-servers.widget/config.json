@@ -1,0 +1,10 @@
+{
+  "position": { "corner": "bottom-left" },
+  "refreshSeconds": 10,
+  "staleHours": 24,
+  "maxRows": 12,
+  "ignoreProcesses": [],
+  "ignorePorts": [],
+  "show": { "uptime": true, "health": true, "cpu": true, "mem": true, "branch": true },
+  "mock": false
+}

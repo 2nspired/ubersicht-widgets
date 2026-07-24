@@ -1,0 +1,3 @@
+{"ID":"aaa111","Names":"acme-api-db-1","Image":"postgres:16","Ports":"0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp","Labels":"com.docker.compose.project=acme-api,com.docker.compose.service=db","State":"running"}
+{"ID":"bbb222","Names":"redis-solo","Image":"redis:7","Ports":"127.0.0.1:6379->6379/tcp","Labels":"","State":"running"}
+{"ID":"ccc333","Names":"worker-1","Image":"acme/worker:latest","Ports":"","Labels":"com.docker.compose.project=acme-api","State":"running"}

@@ -1,0 +1,11 @@
+{
+  "generatedAt": "2026-07-23T12:00:00.000Z",
+  "status": "ok",
+  "servers": [
+    { "kind": "process", "pid": 111, "port": 3000, "ports": [3000], "command": "node", "name": null, "project": "2nspired", "branch": "main", "ageSeconds": 7200, "age": "2h", "stale": false, "cpu": 1.2, "memMb": 210, "health": "up" },
+    { "kind": "process", "pid": 222, "port": 8080, "ports": [8080], "command": "node", "name": null, "project": "acme-api", "branch": "fix/auth", "ageSeconds": 260000, "age": "3d", "stale": true, "cpu": 0.0, "memMb": 96, "health": "up" },
+    { "kind": "process", "pid": 223, "port": 9999, "ports": [9999], "command": "python3.12", "name": null, "project": "acme-api", "branch": "fix/auth", "ageSeconds": 300, "age": "5m", "stale": false, "cpu": 0.3, "memMb": 44, "health": "down" },
+    { "kind": "docker", "pid": null, "port": 5432, "ports": [5432], "command": "postgres:16", "name": "acme-api-db-1", "project": "acme-api", "branch": null, "ageSeconds": 18000, "age": "5h", "stale": false, "cpu": null, "memMb": null, "health": "tcp" },
+    { "kind": "tunnel", "pid": 333, "port": null, "ports": [], "command": "ngrok", "name": null, "project": null, "branch": null, "ageSeconds": 2700, "age": "45m", "stale": false, "cpu": 0.1, "memMb": 30, "health": "unknown" }
+  ]
+}
