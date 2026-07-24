@@ -50,3 +50,23 @@ test("mergeDocker with no containers is a no-op that still strips docker daemon 
   assert.equal(merged.length, 1);
   assert.equal(merged[0].pid, 344);
 });
+
+test("mergeDocker removes non-docker rows by port rule when all ports are published", () => {
+  const scanned = [
+    { pid: 344, command: "node", port: 3000, ports: [3000] },
+    { pid: 902, command: "backend-helper", port: 5432, ports: [5432] },
+  ];
+  const merged = mergeDocker(scanned, parseDockerPs(FIXTURE));
+  assert.ok(merged.some((r) => r.pid === 344)); // untouched
+  assert.ok(!merged.some((r) => r.pid === 902)); // removed: not a docker daemon but all ports are published
+});
+
+test("mergeDocker uses container name as project fallback when compose label missing", () => {
+  const scanned = [
+    { pid: 344, command: "node", port: 3000, ports: [3000] },
+  ];
+  const merged = mergeDocker(scanned, parseDockerPs(FIXTURE));
+  const redis = merged.find((r) => r.kind === "docker" && r.port === 6379);
+  assert.equal(redis.name, "redis-solo");
+  assert.equal(redis.project, "redis-solo");
+});
