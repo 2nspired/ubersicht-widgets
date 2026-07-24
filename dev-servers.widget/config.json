@@ -1,5 +1,5 @@
 {
-  "position": { "corner": "top-right" },
+  "position": { "corner": "bottom-left" },
   "refreshSeconds": 10,
   "staleHours": 24,
   "maxRows": 12,
