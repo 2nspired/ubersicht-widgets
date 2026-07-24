@@ -25,9 +25,16 @@ function readConfig() {
   }
 }
 
+// Read once at module level: main() and the error-emitting paths (watchdog,
+// main().catch) all need it, and the watchdog fires outside main()'s scope.
+const CONFIG = readConfig();
+
 // Fixed argv only — observed process/container names are never passed as
 // arguments; the only dynamic argv values are integer-validated PIDs.
-function run(cmd, args, timeoutMs = 4000) {
+// 2000ms default: main() runs two sequential Promise.all batches, so worst
+// case is ~2x this value plus health probes (~300ms); must stay under the
+// 5000ms watchdog below.
+function run(cmd, args, timeoutMs = 2000) {
   return new Promise((resolve) => {
     execFile(cmd, args, { timeout: timeoutMs, maxBuffer: 4 * 1024 * 1024 }, (err, stdout) => {
       // lsof exits non-zero in benign cases; whatever stdout produced is usable.
@@ -37,7 +44,7 @@ function run(cmd, args, timeoutMs = 4000) {
 }
 
 async function main() {
-  const config = readConfig();
+  const config = CONFIG;
   const useMock = process.argv.includes("--no-mock")
     ? false
     : config.mock || process.argv.includes("--mock");
@@ -123,10 +130,14 @@ async function main() {
 
 // Watchdog: a hung docker/lsof must not pile up collectors across refreshes.
 const watchdog = setTimeout(() => {
-  process.stdout.write(
-    JSON.stringify({ status: "error", message: "collector timed out", servers: [] })
-  );
-  process.exit(0);
+  const json = JSON.stringify({
+    generatedAt: new Date().toISOString(),
+    status: "error",
+    message: "collector timed out",
+    config: CONFIG,
+    servers: [],
+  });
+  process.stdout.write(json, () => process.exit(0));
 }, 5000);
 
 main()
@@ -135,8 +146,10 @@ main()
     clearTimeout(watchdog);
     process.stdout.write(
       JSON.stringify({
+        generatedAt: new Date().toISOString(),
         status: "error",
         message: String((err && err.message) || err),
+        config: CONFIG,
         servers: [],
       })
     );

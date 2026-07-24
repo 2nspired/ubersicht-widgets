@@ -24,6 +24,8 @@ test("collect live run exits 0 and prints one JSON document, ok or error", () =>
   const data = JSON.parse(out);
   assert.ok(["ok", "error"].includes(data.status));
   assert.ok(Array.isArray(data.servers));
+  assert.ok(data.config);
+  assert.equal(typeof data.generatedAt, "string");
   for (const s of data.servers) {
     if (s.port != null) assert.ok(Number.isInteger(s.port));
     if (s.pid != null) assert.ok(Number.isInteger(s.pid));
