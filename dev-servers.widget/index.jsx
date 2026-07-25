@@ -93,7 +93,9 @@ export const render = ({ output }) => {
   }
   const config = data.config || {};
   const show = config.show || {};
+  const scale = typeof config.scale === "number" ? config.scale : 1;
   const style = cornerStyle(config.position && config.position.corner);
+  style.zoom = scale; // cornerStyle returns a fresh object; avoid object spread (Übersicht Babel)
 
   if (data.status === "error") {
     return (

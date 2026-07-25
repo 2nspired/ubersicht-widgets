@@ -6,5 +6,6 @@
   "ignoreProcesses": [],
   "ignorePorts": [],
   "show": { "uptime": true, "health": true, "cpu": true, "mem": true, "branch": true },
+  "scale": 1.5,
   "mock": false
 }

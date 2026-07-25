@@ -60,6 +60,7 @@ Edit `dev-servers.widget/config.json`. Everything is optional; defaults shown.
 | `ignoreProcesses` | string[] | `[]` | Extra processes to hide (case-insensitive prefix match; also matches docker container names). |
 | `ignorePorts` | number[] | `[]` | Extra ports to hide (a row hides only when *all* its ports are ignored). |
 | `show.uptime` / `.health` / `.cpu` / `.mem` / `.branch` | boolean | all `true` | Toggle individual fields per row. |
+| `scale` | number | `1` | CSS zoom for the whole card — use ~`1.5` on 4K/hi-DPI displays. |
 | `mock` | boolean | `false` | Render canned sample data (the screenshot above) instead of scanning. |
 
 ## How it works
