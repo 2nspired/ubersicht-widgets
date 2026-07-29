@@ -50,11 +50,13 @@ const sub = css` color: #9aa0b0; `;
 const strong = css` color: #e8eaf0; font-weight: 600; `;
 
 // config.position.corner: "top-right" | "top-left" | "bottom-right" | "bottom-left"
-const cornerStyle = (corner) => {
+// Insets match claude-usage (8px vertical, 12px horizontal). zoom multiplies the
+// element's own offsets, so divide by scale to keep these physical pixels.
+const cornerStyle = (corner, scale) => {
   const [v, h] = String(corner || "top-right").split("-");
   return {
-    [v === "bottom" ? "bottom" : "top"]: 12,
-    [h === "left" ? "left" : "right"]: 12,
+    [v === "bottom" ? "bottom" : "top"]: 8 / scale,
+    [h === "left" ? "left" : "right"]: 12 / scale,
   };
 };
 
@@ -94,7 +96,7 @@ export const render = ({ output }) => {
   const config = data.config || {};
   const show = config.show || {};
   const scale = typeof config.scale === "number" ? config.scale : 1;
-  const style = cornerStyle(config.position && config.position.corner);
+  const style = cornerStyle(config.position && config.position.corner, scale);
   style.zoom = scale; // cornerStyle returns a fresh object; avoid object spread (Übersicht Babel)
 
   if (data.status === "error") {
