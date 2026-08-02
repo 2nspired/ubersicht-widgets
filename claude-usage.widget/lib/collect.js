@@ -24,6 +24,13 @@ function readConfig() {
   }
 }
 
+const { resolveTheme } = require("./theme");
+
+// Hoisted to module level so main().catch — which runs outside main()'s
+// scope — can still emit a themed payload. Mirrors dev-servers/collect.js.
+const CONFIG = readConfig();
+const THEME = resolveTheme({ widgetDir: __dirname, config: CONFIG });
+
 async function layer(loader) {
   try {
     return await loader();
@@ -33,7 +40,7 @@ async function layer(loader) {
 }
 
 async function main() {
-  const config = readConfig();
+  const config = CONFIG;
   const useMock = process.argv.includes("--no-mock") ? false : config.mock || process.argv.includes("--mock");
   let providers;
 
@@ -55,11 +62,24 @@ async function main() {
   }
 
   process.stdout.write(
-    JSON.stringify({ generatedAt: new Date().toISOString(), config, providers })
+    JSON.stringify({
+      generatedAt: new Date().toISOString(),
+      config,
+      theme: THEME.theme,
+      themeError: THEME.themeError,
+      providers,
+    })
   );
 }
 
 main().catch((err) => {
-  process.stdout.write(JSON.stringify({ error: "collect-failed", message: String(err) }));
+  process.stdout.write(
+    JSON.stringify({
+      error: "collect-failed",
+      message: String(err),
+      theme: THEME.theme,
+      themeError: THEME.themeError,
+    })
+  );
   process.exitCode = 0; // never crash the widget
 });

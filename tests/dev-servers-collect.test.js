@@ -6,6 +6,20 @@ const { execFileSync } = require("node:child_process");
 
 const COLLECT = path.join(__dirname, "..", "dev-servers.widget", "lib", "collect.js");
 
+// Four emit sites (mock, success, watchdog, main().catch) hand-construct
+// { theme, themeError }; nothing previously asserted any of them actually
+// did. Shared shape check so a dropped `theme: THEME.theme` at any site
+// fails loudly instead of silently leaving the card unthemed.
+function assertThemeShape(data) {
+  assert.ok(data.theme && typeof data.theme === "object");
+  const keys = Object.keys(data.theme);
+  assert.equal(keys.length, 13, `expected 13 theme keys, got ${keys.length}`);
+  for (const key of keys) {
+    assert.equal(typeof data.theme[key], "string", `theme.${key} must be a string`);
+  }
+  assert.ok("themeError" in data, "payload is missing themeError");
+}
+
 test("collect --mock prints a valid payload with servers", () => {
   const out = execFileSync(process.execPath, [COLLECT, "--mock"], { encoding: "utf8" });
   const data = JSON.parse(out);
@@ -14,6 +28,7 @@ test("collect --mock prints a valid payload with servers", () => {
   assert.ok(data.config.show);
   const kinds = new Set(data.servers.map((s) => s.kind));
   assert.ok(kinds.has("process") && kinds.has("docker") && kinds.has("tunnel"));
+  assertThemeShape(data);
 });
 
 test("collect live run exits 0 and prints one JSON document, ok or error", () => {
@@ -30,4 +45,5 @@ test("collect live run exits 0 and prints one JSON document, ok or error", () =>
     if (s.port != null) assert.ok(Number.isInteger(s.port));
     if (s.pid != null) assert.ok(Number.isInteger(s.pid));
   }
+  assertThemeShape(data);
 });

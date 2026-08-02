@@ -15,6 +15,13 @@ Preview the raw JSON payload the widget renders from:
 ./claude-usage.widget/lib/run.sh | python3 -m json.tool
 ```
 
+`lib/theme.js` is vendored into each widget. After editing it, run
+`npm run sync:themes` — `npm test` fails if the copies drift. See
+[theming.md](theming.md).
+
+`npm run check:bundle` runs esbuild over every widget's `index.jsx` to catch
+JSX that Übersicht's older Babel would reject. Needs network on first run.
+
 Environment variables for test/dev isolation (never needed in normal use):
 
 | Variable | Effect |
@@ -23,6 +30,7 @@ Environment variables for test/dev isolation (never needed in normal use):
 | `CLAUDE_USAGE_WIDGET_CACHE` | Overrides the logs-layer cache file path (default `~/.cache/claude-usage-widget/daily.json`). |
 | `CLAUDE_USAGE_WIDGET_CACHE_DIR` | Overrides the cache *directory* used by the limits layer (`limits.json` lives here). |
 | `CLAUDE_USAGE_WIDGET_NO_KEYCHAIN` | Set to `1` to force the limits layer to `unavailable` without touching Keychain or network. |
+| `UBERSICHT_WIDGETS_THEME_DIR` | Overrides the `themes/` directory the theme resolver reads (default: nearest `themes/` walking up from the widget). |
 
 JSX gotchas for Übersicht's older Babel: no `<>` fragment shorthand (use
 `<span style={{display:"contents"}}>`), avoid `??` / `?.`. Verify bundling

@@ -12,18 +12,35 @@ export const className = `
   pointer-events: none;
 `;
 
-const GREEN = "#5ba97f", AMBER = "#d9a557", GRAY = "#9aa0b0";
+// Theme-driven; the widget root carries the matching --ub-* custom properties.
+const OK = "var(--ub-ok, #5ba97f)", WARN = "var(--ub-warn, #d9a557)", SUB = "var(--ub-sub, #9aa0b0)";
+
+const TOKENS = [
+  "text", "sub", "muted", "accent", "ok", "warn", "danger",
+  "surface", "border", "shadow", "divider", "track", "radius",
+];
+
+// Object.assign, not spread — Übersicht's Babel does not support object spread.
+const themeVars = (theme) => {
+  const vars = {};
+  if (!theme) return vars;
+  for (let i = 0; i < TOKENS.length; i++) {
+    const key = TOKENS[i];
+    if (typeof theme[key] === "string") vars["--ub-" + key] = theme[key];
+  }
+  return vars;
+};
 
 const card = css`
   position: absolute;
   min-width: 240px;
   max-width: 420px;
   padding: 10px 14px;
-  border-radius: 12px;
-  background: linear-gradient(180deg, rgba(26, 29, 36, 0.92), rgba(18, 20, 26, 0.92));
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
-  color: #e8eaf0;
+  border-radius: var(--ub-radius, 12px);
+  background: var(--ub-surface, linear-gradient(180deg, rgba(26, 29, 36, 0.92), rgba(18, 20, 26, 0.92)));
+  border: 1px solid var(--ub-border, rgba(255, 255, 255, 0.09));
+  box-shadow: var(--ub-shadow, 0 8px 30px rgba(0, 0, 0, 0.45));
+  color: var(--ub-text, #e8eaf0);
   font-family: -apple-system, "SF Pro Display", Helvetica, sans-serif;
   font-size: 10.5px;
   font-variant-numeric: tabular-nums;
@@ -31,7 +48,7 @@ const card = css`
 `;
 
 const title = css`
-  color: #9aa0b0;
+  color: var(--ub-sub, #9aa0b0);
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.12em;
@@ -46,8 +63,8 @@ const row = css`
   white-space: nowrap;
 `;
 
-const sub = css` color: #9aa0b0; `;
-const strong = css` color: #e8eaf0; font-weight: 600; `;
+const sub = css` color: var(--ub-sub, #9aa0b0); `;
+const strong = css` color: var(--ub-text, #e8eaf0); font-weight: 600; `;
 
 // config.position.corner: "top-right" | "top-left" | "bottom-right" | "bottom-left"
 // Insets match claude-usage (8px vertical, 12px horizontal). zoom multiplies the
@@ -60,10 +77,10 @@ const cornerStyle = (corner, scale) => {
   };
 };
 
-const DOT_COLOR = { up: GREEN, tcp: GRAY, down: AMBER, unknown: GRAY };
+const DOT_COLOR = { up: OK, tcp: SUB, down: WARN, unknown: SUB };
 
 const Dot = ({ health }) => (
-  <span style={{ color: DOT_COLOR[health] || GRAY, fontSize: 8 }}>
+  <span style={{ color: DOT_COLOR[health] || SUB, fontSize: 8 }}>
     {health === "tcp" ? "◉" : "●"}
   </span>
 );
@@ -79,7 +96,7 @@ const Row = ({ s, show }) => (
     {(s.project || s.name) && <span className={sub}>{s.command}</span>}
     {show.branch && s.branch && <span className={sub}>⎇ {s.branch}</span>}
     {show.uptime && s.age && (
-      <span style={{ color: s.stale ? AMBER : "#9aa0b0" }}>{s.age}</span>
+      <span style={{ color: s.stale ? WARN : SUB }}>{s.age}</span>
     )}
     {show.cpu && s.cpu != null && <span className={sub}>{Math.round(s.cpu)}%</span>}
     {show.mem && s.memMb != null && <span className={sub}>{s.memMb}MB</span>}
@@ -98,6 +115,7 @@ export const render = ({ output }) => {
   const scale = typeof config.scale === "number" ? config.scale : 1;
   const style = cornerStyle(config.position && config.position.corner, scale);
   style.zoom = scale; // cornerStyle returns a fresh object; avoid object spread (Übersicht Babel)
+  Object.assign(style, themeVars(data.theme));
 
   if (data.status === "error") {
     return (
