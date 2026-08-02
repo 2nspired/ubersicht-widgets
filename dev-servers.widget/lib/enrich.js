@@ -4,6 +4,10 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 
+// Shared with system.widget; canonical copy lives at repo-root lib/project.js
+// and is vendored here by scripts/sync-shared.sh.
+const { findProjectRoot, parseCwds } = require("./project");
+
 const TUNNEL_NAMES = new Set(["ngrok", "cloudflared", "stripe"]);
 
 function parseEtime(s) {
@@ -40,20 +44,6 @@ function readBranch(projectRoot, { readFile = fs.readFileSync } = {}) {
   }
 }
 
-// Walks up from cwd looking for .git or package.json. Stops at (and never
-// matches) $HOME and / — home directories aren't projects, and the walk must
-// not escape the user's own tree.
-function findProjectRoot(cwd, { exists = fs.existsSync, home = os.homedir() } = {}) {
-  let dir = String(cwd || "");
-  while (dir && dir !== "/" && dir !== home) {
-    if (exists(path.join(dir, ".git")) || exists(path.join(dir, "package.json"))) return dir;
-    const parent = path.dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-  return null;
-}
-
 // Parses `ps -o pid=,etime=,%cpu=,rss= -p <pids>` output.
 function parsePs(text) {
   const map = new Map();
@@ -65,17 +55,6 @@ function parsePs(text) {
       cpu: Number(m[3]),
       memMb: Math.round(Number(m[4]) / 1024),
     });
-  }
-  return map;
-}
-
-// Parses `lsof -a -p <pids> -d cwd -Fpn` output: p<pid> then n<path>.
-function parseCwds(text) {
-  const map = new Map();
-  let pid = null;
-  for (const line of String(text).split("\n")) {
-    if (line[0] === "p") pid = Number(line.slice(1));
-    else if (line[0] === "n" && Number.isInteger(pid)) map.set(pid, line.slice(1));
   }
   return map;
 }

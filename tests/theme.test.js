@@ -246,7 +246,7 @@ test("shipped themes are visually distinct from midnight", () => {
   }
 });
 
-// Mirrors scripts/sync-themes.sh's own discovery (`for WIDGET in *.widget; [ -d
+// Mirrors scripts/sync-shared.sh's own discovery (`for WIDGET in *.widget; [ -d
 // "$WIDGET/lib" ]`), so any widget the sync script would vendor into is also
 // drift-checked here — hardcoding the two current widget names would let a
 // third widget (e.g. the planned system monitor) go unchecked.
@@ -263,14 +263,20 @@ function discoverWidgets(root) {
 test("vendored resolvers are byte-identical to the canonical one", () => {
   const root = path.join(__dirname, "..");
   const widgets = discoverWidgets(root);
-  assert.ok(widgets.length > 0, "expected at least one *.widget with a lib/ dir");
-  const canonical = fs.readFileSync(path.join(root, "lib", "theme.js"));
-  for (const widget of widgets) {
-    const vendored = fs.readFileSync(path.join(root, widget, "lib", "theme.js"));
-    assert.ok(
-      canonical.equals(vendored),
-      `${widget}/lib/theme.js has drifted — run: npm run sync:themes`
-    );
+  assert.ok(widgets.length > 0, "no widgets discovered");
+
+  const modules = fs.readdirSync(path.join(root, "lib")).filter((f) => f.endsWith(".js"));
+  assert.ok(modules.length > 0, "no shared modules found in lib/");
+
+  for (const mod of modules) {
+    const canonical = fs.readFileSync(path.join(root, "lib", mod));
+    for (const widget of widgets) {
+      const vendored = fs.readFileSync(path.join(root, widget, "lib", mod));
+      assert.ok(
+        canonical.equals(vendored),
+        `${widget}/lib/${mod} has drifted — run: npm run sync:shared`
+      );
+    }
   }
 });
 

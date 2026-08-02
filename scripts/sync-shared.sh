@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copy the canonical theme resolver into each widget. Widgets must stay
+# Copy every canonical shared module into each widget. Widgets must stay
 # self-contained: scripts/package.sh zips a single widget folder from HEAD,
 # so a cross-folder require would break every gallery install.
 # tests/theme.test.js fails if a copy drifts.
@@ -10,6 +10,8 @@ cd "$ROOT"
 
 for WIDGET in *.widget; do
   [ -d "$WIDGET/lib" ] || continue
-  cp lib/theme.js "$WIDGET/lib/theme.js"
-  echo "synced -> $WIDGET/lib/theme.js"
+  for MODULE in lib/*.js; do
+    cp "$MODULE" "$WIDGET/lib/$(basename "$MODULE")"
+    echo "synced -> $WIDGET/lib/$(basename "$MODULE")"
+  done
 done

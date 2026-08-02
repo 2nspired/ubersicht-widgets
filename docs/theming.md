@@ -93,7 +93,7 @@ would break every gallery install.
 After editing `lib/theme.js`:
 
 ```bash
-npm run sync:themes
+npm run sync:shared
 npm test
 ```
 
