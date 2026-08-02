@@ -1,4 +1,5 @@
 {
+  "theme": null,
   "position": { "corner": "bottom-left" },
   "refreshSeconds": 10,
   "staleHours": 24,

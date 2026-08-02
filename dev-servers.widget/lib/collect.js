@@ -29,6 +29,12 @@ function readConfig() {
 // main().catch) all need it, and the watchdog fires outside main()'s scope.
 const CONFIG = readConfig();
 
+const { resolveTheme } = require("./theme");
+// Resolved at module level for the same reason CONFIG is: the watchdog and
+// main().catch both emit payloads from outside main()'s scope, and an
+// unthemed error card would render with no background at all.
+const THEME = resolveTheme({ widgetDir: __dirname, config: CONFIG });
+
 // Fixed argv only — observed process/container names are never passed as
 // arguments; the only dynamic argv values are integer-validated PIDs.
 // 2000ms default: main() runs two sequential Promise.all batches, so worst
@@ -51,7 +57,9 @@ async function main() {
 
   if (useMock) {
     const mock = JSON.parse(fs.readFileSync(path.join(__dirname, "mock.json"), "utf8"));
-    process.stdout.write(JSON.stringify({ ...mock, config }));
+    process.stdout.write(
+      JSON.stringify({ ...mock, config, theme: THEME.theme, themeError: THEME.themeError })
+    );
     return;
   }
 
@@ -129,7 +137,14 @@ async function main() {
   );
 
   process.stdout.write(
-    JSON.stringify({ generatedAt: new Date().toISOString(), status: "ok", config, servers })
+    JSON.stringify({
+      generatedAt: new Date().toISOString(),
+      status: "ok",
+      config,
+      theme: THEME.theme,
+      themeError: THEME.themeError,
+      servers,
+    })
   );
 }
 
@@ -140,6 +155,8 @@ const watchdog = setTimeout(() => {
     status: "error",
     message: "collector timed out",
     config: CONFIG,
+    theme: THEME.theme,
+    themeError: THEME.themeError,
     servers: [],
   });
   process.stdout.write(json, () => process.exit(0));
@@ -155,6 +172,8 @@ main()
         status: "error",
         message: String((err && err.message) || err),
         config: CONFIG,
+        theme: THEME.theme,
+        themeError: THEME.themeError,
         servers: [],
       })
     );
