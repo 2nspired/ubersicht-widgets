@@ -307,9 +307,13 @@ Two keys need their behaviour pinned down explicitly:
 - **`show.history: false`** disables collection *and* rendering of the ring
   buffer: `ghost` drops its background stream, `ticker` drops its sparkline, and
   the spike annotation is suppressed regardless of `show.spike` — a spike cannot
-  be detected without history. The widget becomes fully stateless in this mode
-  and writes no cache file, which is the supported way to run it without
-  on-disk state.
+  be detected without history.
+
+  It does **not** make the widget stateless. The cache file still holds the
+  previous `ps` sample, because accurate CPU percentages are computed by
+  diffing against it; discarding it would permanently degrade every reading to
+  `ps`'s decaying average, which is the very thing this design rejects. Only
+  the ring is suppressed, so the cache shrinks from ~100 entries to one.
 
 ## Theming
 
