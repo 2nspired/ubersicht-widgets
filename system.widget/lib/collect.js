@@ -113,6 +113,11 @@ async function main() {
   ]);
 
   const samples = cpuLib.parsePsSample(psOut);
+  // Exclude the collector's own process by PID before it can reach grouping —
+  // the PID is unavailable once groupProcesses has collapsed samples into
+  // labelled rows. Doing it here also means the cached sample never carries
+  // this run's own PID forward.
+  samples.delete(process.pid);
   const elapsed = cache.at ? (nowMs - cache.at) / 1000 : 0;
   const discontinuous = hist.isDiscontinuity(cache.at, nowMs);
 
@@ -148,9 +153,16 @@ async function main() {
   }
 
   const groups = cpuLib.groupProcesses(samples, percents, projectByPid);
-  // The widget must not rank itself: on an idle machine its own ~3% would
-  // otherwise take the top slot. dev-servers filters Übersicht the same way.
-  const selfLabels = new Set(["node", "Übersicht", "Uebersicht"]);
+  // Two distinct exclusions, for two distinct reasons:
+  //  - This collector's own process is already gone by PID (above), before
+  //    grouping. It couldn't have accrued a delta anyway: Übersicht spawns a
+  //    fresh node process every refresh, so its PID is never present in the
+  //    previous cached sample and computeDeltas skips it.
+  //  - Übersicht's long-lived app process (/Applications/Übersicht.app/...)
+  //    is a real, continuously-running process with real CPU cost, so it
+  //    must be filtered by label here rather than by PID. dev-servers
+  //    filters it the same way.
+  const selfLabels = new Set(["Übersicht", "Uebersicht"]);
   const visible = groups.filter((g) => !(g.kind !== "dev" && selfLabels.has(g.label)));
 
   const totalPercent = [...percents.values()].reduce((a, b) => a + b, 0);
