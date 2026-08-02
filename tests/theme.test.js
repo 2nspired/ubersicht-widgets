@@ -215,3 +215,15 @@ test("shipped themes are visually distinct from midnight", () => {
     );
   }
 });
+
+test("vendored resolvers are byte-identical to the canonical one", () => {
+  const root = path.join(__dirname, "..");
+  const canonical = fs.readFileSync(path.join(root, "lib", "theme.js"));
+  for (const widget of ["claude-usage.widget", "dev-servers.widget"]) {
+    const vendored = fs.readFileSync(path.join(root, widget, "lib", "theme.js"));
+    assert.ok(
+      canonical.equals(vendored),
+      `${widget}/lib/theme.js has drifted — run: npm run sync:themes`
+    );
+  }
+});

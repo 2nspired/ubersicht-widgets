@@ -5,7 +5,9 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "test": "node --test tests/**/*.test.js"
+    "test": "node --test tests/**/*.test.js",
+    "sync:themes": "scripts/sync-themes.sh",
+    "check:bundle": "for w in *.widget; do npx --yes esbuild \"$w/index.jsx\" --bundle --external:uebersicht --outfile=/dev/null || exit 1; done"
   },
   "license": "MIT"
 }
