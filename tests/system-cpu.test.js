@@ -76,3 +76,101 @@ test("computeDeltas returns empty for a non-positive window", () => {
   assert.equal(cpu.computeDeltas(prev, curr, 0).size, 0);
   assert.equal(cpu.computeDeltas(prev, curr, -5).size, 0);
 });
+
+test("bundleName takes the FIRST .app in a nested path", () => {
+  // Helper processes live in nested bundles. Taking the last would yield
+  // "Obsidian Helper (GPU)" and defeat the entire point of grouping.
+  assert.equal(
+    cpu.bundleName("/Applications/Obsidian.app/Contents/Frameworks/Obsidian Helper (GPU).app/Contents/MacOS/Obsidian Helper (GPU)"),
+    "Obsidian");
+  // Docker nests three deep.
+  assert.equal(
+    cpu.bundleName("/Applications/Docker.app/Contents/MacOS/Docker Desktop.app/Contents/Frameworks/Docker Desktop Helper (GPU).app/Contents/MacOS/Docker Desktop Helper (GPU)"),
+    "Docker");
+  assert.equal(cpu.bundleName("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"), "Google Chrome");
+});
+
+test("bundleName returns null for non-bundle executables", () => {
+  assert.equal(cpu.bundleName("/usr/bin/ssh"), null);
+  assert.equal(cpu.bundleName("/Users/me/.local/share/fnm/node-versions/v22/installation/bin/node"), null);
+  assert.equal(cpu.bundleName(""), null);
+});
+
+test("classify identifies app bundles, dev binaries and plain executables", () => {
+  assert.deepEqual(
+    cpu.classify("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
+    { kind: "app", label: "Google Chrome" });
+  assert.deepEqual(
+    cpu.classify("/Users/me/.local/share/fnm/node-versions/v22/installation/bin/node"),
+    { kind: "dev", label: "node" });
+  assert.deepEqual(
+    cpu.classify("/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer"),
+    { kind: "exe", label: "WindowServer" });
+  assert.deepEqual(cpu.classify("/usr/bin/python3.12"), { kind: "dev", label: "python3.12" });
+});
+
+test("groupProcesses collapses an app family into one row", () => {
+  const samples = new Map([
+    [1, { comm: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", rssKb: 100, cpuSeconds: 0 }],
+    [2, { comm: "/Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Helper.app/Contents/MacOS/Google Chrome Helper", rssKb: 200, cpuSeconds: 0 }],
+    [3, { comm: "/System/Library/X/WindowServer", rssKb: 50, cpuSeconds: 0 }],
+  ]);
+  const percents = new Map([[1, 78], [2, 83], [3, 29]]);
+  const groups = cpu.groupProcesses(samples, percents, new Map());
+
+  const chrome = groups.find((g) => g.label === "Google Chrome");
+  assert.equal(chrome.percent, 161);
+  assert.equal(chrome.rssKb, 300);
+  assert.equal(chrome.count, 2);
+  assert.equal(groups[0].label, "Google Chrome", "sorted by percent desc");
+});
+
+test("groupProcesses labels dev processes by project, keeping them separate", () => {
+  const samples = new Map([
+    [10, { comm: "/usr/local/bin/node", rssKb: 100, cpuSeconds: 0 }],
+    [11, { comm: "/usr/local/bin/node", rssKb: 200, cpuSeconds: 0 }],
+  ]);
+  const percents = new Map([[10, 38], [11, 12]]);
+  const projects = new Map([[10, "abra-abr"], [11, "project-tracker"]]);
+  const groups = cpu.groupProcesses(samples, percents, projects);
+
+  assert.equal(groups.length, 2, "different projects must not merge");
+  assert.equal(groups[0].label, "node · abra-abr");
+  assert.equal(groups[0].percent, 38);
+});
+
+test("groupProcesses merges dev processes sharing one project", () => {
+  const samples = new Map([
+    [10, { comm: "/usr/local/bin/node", rssKb: 100, cpuSeconds: 0 }],
+    [11, { comm: "/usr/local/bin/node", rssKb: 200, cpuSeconds: 0 }],
+  ]);
+  const percents = new Map([[10, 10], [11, 20]]);
+  const projects = new Map([[10, "acme"], [11, "acme"]]);
+  const groups = cpu.groupProcesses(samples, percents, projects);
+  assert.equal(groups.length, 1);
+  assert.equal(groups[0].percent, 30);
+  assert.equal(groups[0].count, 2);
+});
+
+test("groupProcesses falls back to the bare binary when no project resolves", () => {
+  const samples = new Map([[10, { comm: "/usr/local/bin/node", rssKb: 100, cpuSeconds: 0 }]]);
+  const groups = cpu.groupProcesses(samples, new Map([[10, 5]]), new Map());
+  assert.equal(groups[0].label, "node");
+});
+
+test("groupProcesses treats a missing percentage as zero, keeping rss usable", () => {
+  const samples = new Map([[10, { comm: "/usr/bin/foo", rssKb: 400, cpuSeconds: 0 }]]);
+  const groups = cpu.groupProcesses(samples, new Map(), new Map());
+  assert.equal(groups[0].percent, 0);
+  assert.equal(groups[0].rssKb, 400);
+});
+
+test("topBy returns the n largest by the requested field", () => {
+  const groups = [
+    { label: "a", percent: 5, rssKb: 900 },
+    { label: "b", percent: 80, rssKb: 100 },
+    { label: "c", percent: 40, rssKb: 500 },
+  ];
+  assert.deepEqual(cpu.topBy(groups, "percent", 2).map((g) => g.label), ["b", "c"]);
+  assert.deepEqual(cpu.topBy(groups, "rssKb", 2).map((g) => g.label), ["a", "c"]);
+});

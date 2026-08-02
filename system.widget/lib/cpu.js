@@ -54,4 +54,61 @@ function computeDeltas(prev, curr, elapsedSeconds) {
   return out;
 }
 
-module.exports = { parseCpuTime, parsePsSample, computeDeltas, DISCONTINUITY_SECONDS };
+// Executables that are worth labelling by project rather than collapsing:
+// "node 71%" is useless on a machine running thirteen of them.
+const DEV_BINARIES = new Set([
+  "node", "deno", "bun", "ruby", "go", "cargo", "rustc", "java",
+]);
+
+function isDevBinary(base) {
+  return DEV_BINARIES.has(base) || /^python[\d.]*$/.test(base);
+}
+
+// macOS helper processes live in NESTED .app bundles, e.g.
+//   /Applications/Obsidian.app/.../Obsidian Helper (GPU).app/Contents/MacOS/...
+// The first bundle is the owning application; the last is the helper.
+function bundleName(commPath) {
+  const parts = String(commPath || "").split("/");
+  for (const part of parts) {
+    if (part.endsWith(".app")) return part.slice(0, -4);
+  }
+  return null;
+}
+
+function classify(comm) {
+  const app = bundleName(comm);
+  if (app) return { kind: "app", label: app };
+  const base = String(comm || "").split("/").pop() || "";
+  if (isDevBinary(base)) return { kind: "dev", label: base };
+  return { kind: "exe", label: base };
+}
+
+// projectByPid maps a pid to a project name; only dev-kind processes consult it.
+function groupProcesses(samples, percents, projectByPid) {
+  const byLabel = new Map();
+  for (const [pid, sample] of samples) {
+    const { kind, label: base } = classify(sample.comm);
+    const project = kind === "dev" ? projectByPid.get(pid) : null;
+    const label = project ? `${base} · ${project}` : base;
+    if (!label) continue;
+
+    let row = byLabel.get(label);
+    if (!row) {
+      row = { label, kind, percent: 0, rssKb: 0, count: 0 };
+      byLabel.set(label, row);
+    }
+    row.percent += percents.get(pid) || 0;
+    row.rssKb += sample.rssKb || 0;
+    row.count += 1;
+  }
+  return [...byLabel.values()].sort((a, b) => b.percent - a.percent);
+}
+
+function topBy(groups, field, n) {
+  return [...groups].sort((a, b) => b[field] - a[field]).slice(0, n);
+}
+
+module.exports = {
+  parseCpuTime, parsePsSample, computeDeltas, DISCONTINUITY_SECONDS,
+  DEV_BINARIES, bundleName, classify, groupProcesses, topBy,
+};
