@@ -227,3 +227,23 @@ test("vendored resolvers are byte-identical to the canonical one", () => {
     );
   }
 });
+
+test("each index.jsx token list matches the resolver's", () => {
+  const root = path.join(__dirname, "..");
+  for (const widget of ["claude-usage.widget", "dev-servers.widget"]) {
+    const src = fs.readFileSync(path.join(root, widget, "index.jsx"), "utf8");
+
+    const match = src.match(/const TOKENS = \[([\s\S]*?)\];/);
+    assert.ok(match, `${widget}/index.jsx has no TOKENS array`);
+
+    const names = match[1]
+      .split(",")
+      .map((s) => s.trim().replace(/^["']|["']$/g, ""))
+      .filter(Boolean);
+
+    assert.deepStrictEqual(
+      names, TOKENS,
+      `${widget}/index.jsx token list has drifted from lib/theme.js`
+    );
+  }
+});
