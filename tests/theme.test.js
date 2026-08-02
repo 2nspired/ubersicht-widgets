@@ -176,3 +176,42 @@ test("midnight reproduces the pre-theming literals exactly", () => {
     radius: "12px",
   });
 });
+
+test("every shipped theme declares only known tokens with string values", () => {
+  const dir = path.join(__dirname, "..", "themes");
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith(".json"));
+  assert.ok(files.length >= 3, `expected at least 3 themes, found ${files.length}`);
+
+  for (const file of files) {
+    const theme = JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"));
+    const keys = Object.keys(theme);
+
+    const unknown = keys.filter((k) => !TOKENS.includes(k));
+    assert.deepStrictEqual(unknown, [], `${file} declares unknown token(s)`);
+
+    // Shipped themes are complete, unlike user themes which may be partial —
+    // a missing token here means the schema grew and a theme was forgotten.
+    const missing = TOKENS.filter((t) => !keys.includes(t));
+    assert.deepStrictEqual(missing, [], `${file} is missing token(s)`);
+
+    for (const key of keys) {
+      assert.strictEqual(
+        typeof theme[key], "string", `${file}.${key} must be a string`);
+      assert.ok(theme[key].length > 0, `${file}.${key} must not be empty`);
+    }
+  }
+});
+
+test("shipped themes are visually distinct from midnight", () => {
+  const dir = path.join(__dirname, "..", "themes");
+  for (const name of ["daylight", "synthwave"]) {
+    const theme = JSON.parse(
+      fs.readFileSync(path.join(dir, `${name}.json`), "utf8"));
+    const shared = TOKENS.filter((t) => theme[t] === MIDNIGHT[t]);
+    assert.ok(
+      shared.length <= 1,
+      `${name} shares ${shared.length} values with midnight (${shared}) — ` +
+        `it is not exercising the schema`
+    );
+  }
+});
