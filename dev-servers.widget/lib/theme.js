@@ -89,6 +89,14 @@ function resolveTheme(options) {
     return fail(`theme "${name}" could not be loaded: ${detail}`);
   }
 
+  // A theme file must be a plain object to merge over the defaults — reject
+  // null, arrays, and primitives explicitly rather than relying on the
+  // accident that indexing them with a string key is safe (JSON.parse("null")
+  // parses fine, so the try/catch above never fires for this case).
+  if (typeof loaded !== "object" || loaded === null || Array.isArray(loaded)) {
+    return fail(`theme "${name}" is not a valid theme object`);
+  }
+
   // Merge over the defaults so a partial theme declares only what it changes,
   // and ignore anything that isn't a known token with a string value.
   const theme = { ...MIDNIGHT };

@@ -108,6 +108,36 @@ test("malformed theme JSON returns midnight plus themeError", () => {
   assert.match(out.themeError, /broken/);
 });
 
+test("a theme file containing literal null returns midnight plus themeError", () => {
+  const root = fixture({ midnight: MIDNIGHT, voidtheme: "null" }, "voidtheme");
+  const out = withThemeDir(root, () =>
+    resolveTheme({ widgetDir: root, config: {} })
+  );
+  assert.deepStrictEqual(out.theme, MIDNIGHT);
+  assert.ok(out.themeError);
+  assert.match(out.themeError, /voidtheme/);
+});
+
+test("a theme file containing an array returns midnight plus themeError", () => {
+  const root = fixture({ midnight: MIDNIGHT, arraytheme: "[1,2,3]" }, "arraytheme");
+  const out = withThemeDir(root, () =>
+    resolveTheme({ widgetDir: root, config: {} })
+  );
+  assert.deepStrictEqual(out.theme, MIDNIGHT);
+  assert.ok(out.themeError);
+  assert.match(out.themeError, /arraytheme/);
+});
+
+test("a theme file containing a bare number returns midnight plus themeError", () => {
+  const root = fixture({ midnight: MIDNIGHT, numtheme: "42" }, "numtheme");
+  const out = withThemeDir(root, () =>
+    resolveTheme({ widgetDir: root, config: {} })
+  );
+  assert.deepStrictEqual(out.theme, MIDNIGHT);
+  assert.ok(out.themeError);
+  assert.match(out.themeError, /numtheme/);
+});
+
 test("a theme name that escapes the themes dir is rejected", () => {
   const root = fixture({ midnight: MIDNIGHT });
   const out = withThemeDir(root, () =>
@@ -216,10 +246,26 @@ test("shipped themes are visually distinct from midnight", () => {
   }
 });
 
+// Mirrors scripts/sync-themes.sh's own discovery (`for WIDGET in *.widget; [ -d
+// "$WIDGET/lib" ]`), so any widget the sync script would vendor into is also
+// drift-checked here — hardcoding the two current widget names would let a
+// third widget (e.g. the planned system monitor) go unchecked.
+function discoverWidgets(root) {
+  return fs
+    .readdirSync(root)
+    .filter((name) => name.endsWith(".widget"))
+    .filter((name) => {
+      const libDir = path.join(root, name, "lib");
+      return fs.existsSync(libDir) && fs.statSync(libDir).isDirectory();
+    });
+}
+
 test("vendored resolvers are byte-identical to the canonical one", () => {
   const root = path.join(__dirname, "..");
+  const widgets = discoverWidgets(root);
+  assert.ok(widgets.length > 0, "expected at least one *.widget with a lib/ dir");
   const canonical = fs.readFileSync(path.join(root, "lib", "theme.js"));
-  for (const widget of ["claude-usage.widget", "dev-servers.widget"]) {
+  for (const widget of widgets) {
     const vendored = fs.readFileSync(path.join(root, widget, "lib", "theme.js"));
     assert.ok(
       canonical.equals(vendored),
@@ -230,7 +276,9 @@ test("vendored resolvers are byte-identical to the canonical one", () => {
 
 test("each index.jsx token list matches the resolver's", () => {
   const root = path.join(__dirname, "..");
-  for (const widget of ["claude-usage.widget", "dev-servers.widget"]) {
+  const widgets = discoverWidgets(root);
+  assert.ok(widgets.length > 0, "expected at least one *.widget with a lib/ dir");
+  for (const widget of widgets) {
     const src = fs.readFileSync(path.join(root, widget, "index.jsx"), "utf8");
 
     const match = src.match(/const TOKENS = \[([\s\S]*?)\];/);
@@ -245,5 +293,65 @@ test("each index.jsx token list matches the resolver's", () => {
       names, TOKENS,
       `${widget}/index.jsx token list has drifted from lib/theme.js`
     );
+  }
+});
+
+// Scans source text for `var(--ub-<token>, <fallback>)` occurrences. A naive
+// regex truncates at the first comma or paren, which breaks on fallbacks like
+// the `surface` gradient that contain both nested parens and commas — so this
+// walks character-by-character, tracking paren depth from the `var(` that is
+// already open, to find the fallback's true end.
+function findVarFallbacks(src) {
+  const marker = "var(--ub-";
+  const results = [];
+  let idx = 0;
+  while (true) {
+    const start = src.indexOf(marker, idx);
+    if (start === -1) break;
+    const tokenStart = start + marker.length;
+    let tokenEnd = tokenStart;
+    while (tokenEnd < src.length && src[tokenEnd] !== "," && src[tokenEnd] !== ")") {
+      tokenEnd++;
+    }
+    const token = src.slice(tokenStart, tokenEnd).trim();
+
+    if (src[tokenEnd] === ",") {
+      let i = tokenEnd + 1;
+      while (i < src.length && /\s/.test(src[i])) i++;
+      const fallbackStart = i;
+      let depth = 1; // the "var(" above is the open paren we're inside
+      while (i < src.length && depth > 0) {
+        if (src[i] === "(") depth++;
+        else if (src[i] === ")") {
+          depth--;
+          if (depth === 0) break;
+        }
+        i++;
+      }
+      results.push({ token, fallback: src.slice(fallbackStart, i).trim() });
+      idx = i + 1;
+    } else {
+      // No fallback for this occurrence — skip past it and keep scanning.
+      idx = tokenEnd + 1;
+    }
+  }
+  return results;
+}
+
+test("var(--ub-*, fallback) literals match MIDNIGHT exactly", () => {
+  const root = path.join(__dirname, "..");
+  const widgets = discoverWidgets(root);
+  assert.ok(widgets.length > 0, "expected at least one *.widget with a lib/ dir");
+  for (const widget of widgets) {
+    const src = fs.readFileSync(path.join(root, widget, "index.jsx"), "utf8");
+    const found = findVarFallbacks(src);
+    assert.ok(found.length > 0, `${widget}/index.jsx has no var(--ub-*, fallback) sites`);
+    for (const { token, fallback } of found) {
+      assert.ok(TOKENS.includes(token), `${widget}/index.jsx: unknown token "${token}"`);
+      assert.strictEqual(
+        fallback, MIDNIGHT[token],
+        `${widget}/index.jsx: var(--ub-${token}) fallback "${fallback}" does not match MIDNIGHT.${token} "${MIDNIGHT[token]}"`
+      );
+    }
   }
 });

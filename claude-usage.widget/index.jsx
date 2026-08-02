@@ -68,7 +68,7 @@ const barOuter = css`
 `;
 
 export const barColor = (pct) =>
-  pct >= 80 ? "var(--ub-danger)" : pct >= 50 ? "var(--ub-warn)" : "var(--ub-ok)";
+  pct >= 80 ? "var(--ub-danger, #d97757)" : pct >= 50 ? "var(--ub-warn, #d9a557)" : "var(--ub-ok, #5ba97f)";
 export const fmtCost = (n) =>
   `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 export const fmtTokens = (n) =>
@@ -215,7 +215,7 @@ const Sparkline = ({ days, width = 7 * 9 }) => {
       {days.map((d) => (
         <span key={d.date} style={{
           flex: 1, borderRadius: "1.5px 1.5px 0 0",
-          background: "var(--ub-accent)",
+          background: "var(--ub-accent, #d97757)",
           opacity: 0.75,
           height: `${Math.max(8, (d.tokens / max) * 100)}%`,
         }} />
@@ -347,7 +347,7 @@ export const render = ({ output }) => {
   if (payload.error === "node-missing")
     return <Positioned align="center"><div className={pill}><span className={sub}>{payload.message}</span></div></Positioned>;
   if (payload.error)
-    return <Positioned align="center"><div className={pill}><span className={sub}>claude-usage error: {payload.message}</span></div></Positioned>;
+    return <Positioned align="center" theme={payload.theme}><div className={pill}><span className={sub}>claude-usage error: {payload.message}</span></div></Positioned>;
 
   const { config } = payload;
   const align = (config.position && config.position.align) || "center";

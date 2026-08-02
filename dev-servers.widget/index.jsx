@@ -13,7 +13,7 @@ export const className = `
 `;
 
 // Theme-driven; the widget root carries the matching --ub-* custom properties.
-const OK = "var(--ub-ok)", WARN = "var(--ub-warn)", SUB = "var(--ub-sub)";
+const OK = "var(--ub-ok, #5ba97f)", WARN = "var(--ub-warn, #d9a557)", SUB = "var(--ub-sub, #9aa0b0)";
 
 const TOKENS = [
   "text", "sub", "muted", "accent", "ok", "warn", "danger",
