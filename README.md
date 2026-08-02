@@ -44,6 +44,20 @@ paste-to-your-agent version) and a configuration table.
 > **Note:** this repo was previously named `claude-usage-widget`; old URLs
 > redirect here.
 
+## Theming
+
+All widgets share one palette. Pick it in `theme.json`:
+
+```json
+{ "active": "midnight" }
+```
+
+`midnight` (default), `daylight`, and `synthwave` ship with the repo. The
+change lands within one refresh cycle — no Übersicht restart. Individual
+widgets can override with `"theme": "<name>"` in their own `config.json`.
+
+→ [Token reference & writing your own](docs/theming.md)
+
 ## Development
 
 ```bash

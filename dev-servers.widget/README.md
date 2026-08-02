@@ -53,6 +53,7 @@ Edit `dev-servers.widget/config.json`. Everything is optional; defaults shown.
 
 | Field | Type | Default | Meaning |
 |---|---|---|---|
+| `theme` | string \| `null` | `null` | Theme name overriding the repo-root `theme.json`. `null` follows the global choice. See [theming](../docs/theming.md). |
 | `position.corner` | `"top-right"` \| `"top-left"` \| `"bottom-right"` \| `"bottom-left"` | `"bottom-left"` | Which screen corner the card sits in. |
 | `refreshSeconds` | number | `10` | Documentation of intent only — Übersicht's actual interval is the static `refreshFrequency` export in `index.jsx` (ms); change both to change cadence. |
 | `staleHours` | number | `24` | Uptime renders amber past this age — the "orphaned by an AI session?" flag. |

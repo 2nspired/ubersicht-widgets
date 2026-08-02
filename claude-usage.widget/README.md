@@ -56,6 +56,7 @@ Edit `claude-usage.widget/config.json`. Everything is optional; defaults shown.
 
 | Field | Type | Default | Meaning |
 |---|---|---|---|
+| `theme` | string \| `null` | `null` | Theme name overriding the repo-root `theme.json`. `null` follows the global choice. See [theming](../docs/theming.md). |
 | `layout` | `"ticker"` \| `"ticker-2line"` \| `"bar"` \| `"corner"` | `"ticker"` | One-line pill · two rows · wide bar with sparkline & model split · compact corner card. |
 | `position.bottom` | number (px) | `8` | Distance from the bottom of the screen. |
 | `position.align` | `"left"` \| `"center"` \| `"right"` | `"center"` | Horizontal placement. |
