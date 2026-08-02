@@ -33,17 +33,23 @@ function detectSpike(entries, { percent, seconds }, nowMs) {
 
   const isValidGap = (gap) => gap > 0 && gap <= DISCONTINUITY_SECONDS * 1000;
 
-  // Each above-threshold reading contributes the interval connecting it to
-  // its neighbor in time — the gap since the previous reading, or (for the
-  // very first sample, which has no previous reading) the gap to the next
-  // one. Samples are irregularly spaced, so real timestamps drive the
-  // duration rather than an assumed cadence, and non-contiguous above-
-  // threshold readings still accumulate toward the same total.
+  // Each sample covers the physical interval since the previous one: an
+  // above-threshold reading at `cur` credits the real elapsed gap
+  // [prev.t, cur.t]. The oldest sample in the window credits nothing — we
+  // genuinely don't know what the machine was doing before the window
+  // opened. Walking consecutive pairs this way credits every interval
+  // exactly once (no double-counting at the start of the array), which
+  // also makes aboveSeconds mathematically incapable of exceeding the
+  // window's elapsed span. Samples are irregularly spaced, so real
+  // timestamps drive the duration rather than an assumed cadence, and
+  // non-contiguous above-threshold readings still accumulate toward the
+  // same total.
   let aboveMs = 0;
-  for (let i = 0; i < entries.length; i++) {
+  for (let i = 1; i < entries.length; i++) {
+    const prev = entries[i - 1];
     const cur = entries[i];
     if (typeof cur.cpu !== "number" || cur.cpu < percent) continue;
-    const gap = i > 0 ? cur.t - entries[i - 1].t : entries[1].t - cur.t;
+    const gap = cur.t - prev.t;
     if (isValidGap(gap)) aboveMs += gap;
   }
 

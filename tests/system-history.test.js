@@ -86,9 +86,28 @@ test("detectSpike sums non-contiguous time above the threshold", () => {
     S(now - 30000, 95), S(now - 27000, 95), S(now - 24000, 20),
     S(now - 21000, 95), S(now - 18000, 95), S(now - 15000, 95), S(now, 20),
   ];
-  const spike = h.detectSpike(entries, { percent: 70, seconds: 15 }, now);
-  assert.ok(spike, "cumulative 15s should qualify even when interrupted");
-  assert.equal(spike.aboveSeconds, 15);
+  // The oldest entry (now-30000) is above threshold but credits no time —
+  // nothing is known about the period before it. Four 3s intervals are
+  // credited instead (the gap into each above-threshold reading at
+  // now-27000, now-21000, now-18000 and now-15000), summing to 12s, not 15s.
+  const spike = h.detectSpike(entries, { percent: 70, seconds: 9 }, now);
+  assert.ok(spike, "cumulative 12s should qualify even when interrupted");
+  assert.equal(spike.aboveSeconds, 12);
+});
+
+test("detectSpike never double-counts the interval when the first two samples are both above threshold", () => {
+  const now = 300000;
+  const entries = [
+    S(now - 15000, 95), S(now - 10000, 96), S(now - 5000, 20), S(now, 20),
+  ];
+  const spike = h.detectSpike(entries, { percent: 70, seconds: 5 }, now);
+  assert.ok(spike, "expected a spike");
+  // Only the now-15000..now-10000 interval is credited (5s): entries[0] is
+  // the oldest sample and contributes nothing, since nothing is known about
+  // what happened before it.
+  assert.equal(spike.aboveSeconds, 5);
+  const span = entries[entries.length - 1].t - entries[0].t;
+  assert.ok(spike.aboveSeconds * 1000 <= span, "aboveSeconds must never exceed the sample set's elapsed span");
 });
 
 test("detectSpike copes with fewer than two samples", () => {
