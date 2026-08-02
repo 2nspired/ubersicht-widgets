@@ -1,0 +1,15 @@
+{
+  "text": "#e8eaf0",
+  "sub": "#9aa0b0",
+  "muted": "#8b90a0",
+  "accent": "#d97757",
+  "ok": "#5ba97f",
+  "warn": "#d9a557",
+  "danger": "#d97757",
+  "surface": "linear-gradient(180deg, rgba(26, 29, 36, 0.92), rgba(18, 20, 26, 0.92))",
+  "border": "rgba(255, 255, 255, 0.09)",
+  "shadow": "0 8px 30px rgba(0, 0, 0, 0.45)",
+  "divider": "rgba(255, 255, 255, 0.1)",
+  "track": "rgba(255, 255, 255, 0.12)",
+  "radius": "12px"
+}
