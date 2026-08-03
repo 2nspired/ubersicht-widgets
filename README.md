@@ -27,6 +27,15 @@ development, where servers get left behind.
 
 → [Install & docs](dev-servers.widget/README.md)
 
+### [system.widget](system.widget/) — why is my machine struggling?
+
+Top CPU and memory consumers **grouped by application** (Chrome's 57
+processes are one row, not three), device-level GPU when it's actually busy,
+memory by kind with real pressure, and five minutes of history so you can
+see whether a spike is ongoing or already over. Two layouts.
+
+→ [Install & docs](system.widget/README.md)
+
 ## Installing a widget
 
 Every widget installs the same way — clone once, symlink the widgets you want:

@@ -1,8 +1,9 @@
 # Theming
 
-Every widget in this repo reads its colours from one active theme. Switching
-themes means editing a single file; the change appears within one refresh
-cycle, with no Übersicht restart.
+Every widget in this repo — `claude-usage.widget`, `dev-servers.widget`, and
+`system.widget` — reads its colours from one active theme. Switching themes
+means editing a single file; the change appears within one refresh cycle,
+with no Übersicht restart.
 
 ## Switching themes
 
