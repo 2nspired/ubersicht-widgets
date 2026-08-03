@@ -112,12 +112,10 @@ async function main() {
     run("vm_stat", []),
   ]);
 
-  const samples = cpuLib.parsePsSample(psOut);
-  // Exclude the collector's own process by PID before it can reach grouping —
-  // the PID is unavailable once groupProcesses has collapsed samples into
-  // labelled rows. Doing it here also means the cached sample never carries
-  // this run's own PID forward.
-  samples.delete(process.pid);
+  // Exclude the collector's own process by PID before it can reach grouping.
+  // See cpu.excludeSelf: doing it here also means the cached sample never
+  // carries this run's own (always-fresh) PID forward.
+  const samples = cpuLib.excludeSelf(cpuLib.parsePsSample(psOut), process.pid);
   const elapsed = cache.at ? (nowMs - cache.at) / 1000 : 0;
   const discontinuous = hist.isDiscontinuity(cache.at, nowMs);
 
@@ -159,11 +157,12 @@ async function main() {
   //    fresh node process every refresh, so its PID is never present in the
   //    previous cached sample and computeDeltas skips it.
   //  - Übersicht's long-lived app process (/Applications/Übersicht.app/...)
-  //    is a real, continuously-running process with real CPU cost, so it
-  //    must be filtered by label here rather than by PID. dev-servers
-  //    filters it the same way.
-  const selfLabels = new Set(["Übersicht", "Uebersicht"]);
-  const visible = groups.filter((g) => !(g.kind !== "dev" && selfLabels.has(g.label)));
+  //    is a real, continuously-running process with real CPU cost, so it is
+  //    filtered by (NFC-normalized) label instead — see cpu.isSelfGroup for
+  //    why raw comparison silently fails here. dev-servers filters it the
+  //    same way.
+  const selfLabels = new Set(["Übersicht", "Uebersicht"].map((s) => s.normalize("NFC")));
+  const visible = groups.filter((g) => !cpuLib.isSelfGroup(g, selfLabels));
 
   const totalPercent = [...percents.values()].reduce((a, b) => a + b, 0);
   const headline = Math.max(0, Math.min(100, Math.round(totalPercent / cores)));

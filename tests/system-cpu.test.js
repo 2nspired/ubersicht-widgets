@@ -174,3 +174,71 @@ test("topBy returns the n largest by the requested field", () => {
   assert.deepEqual(cpu.topBy(groups, "percent", 2).map((g) => g.label), ["b", "c"]);
   assert.deepEqual(cpu.topBy(groups, "rssKb", 2).map((g) => g.label), ["a", "c"]);
 });
+
+test("excludeSelf removes exactly the given pid", () => {
+  const samples = new Map([
+    [1, { comm: "/bin/a", rssKb: 10, cpuSeconds: 0 }],
+    [2, { comm: "/usr/local/bin/node", rssKb: 20, cpuSeconds: 3 }],
+  ]);
+  const out = cpu.excludeSelf(samples, 1);
+  assert.equal(out.has(1), false);
+  assert.equal(out.size, 1);
+});
+
+test("excludeSelf leaves every other entry untouched, including other bare-node processes", () => {
+  // The collector's own pid must be the ONLY thing removed. A machine can
+  // legitimately run several unrelated bare "node" processes (same comm as
+  // the collector itself); none of them may be affected by pid-based removal.
+  const samples = new Map([
+    [10, { comm: "/usr/local/bin/node", rssKb: 100, cpuSeconds: 5 }],
+    [11, { comm: "/usr/local/bin/node", rssKb: 200, cpuSeconds: 8 }],
+    [12, { comm: "/usr/local/bin/node", rssKb: 300, cpuSeconds: 12 }],
+  ]);
+  const out = cpu.excludeSelf(samples, 10);
+  assert.equal(out.size, 2);
+  assert.deepEqual(out.get(11), { comm: "/usr/local/bin/node", rssKb: 200, cpuSeconds: 8 });
+  assert.deepEqual(out.get(12), { comm: "/usr/local/bin/node", rssKb: 300, cpuSeconds: 12 });
+});
+
+test("excludeSelf is a no-op, not an error, when the pid is absent", () => {
+  const samples = new Map([[1, { comm: "/bin/a", rssKb: 10, cpuSeconds: 0 }]]);
+  const out = cpu.excludeSelf(samples, 999999);
+  assert.equal(out.size, 1);
+  assert.deepEqual(out.get(1), { comm: "/bin/a", rssKb: 10, cpuSeconds: 0 });
+});
+
+test("excludeSelf does not mutate the input map", () => {
+  const samples = new Map([[1, { comm: "/bin/a", rssKb: 10, cpuSeconds: 0 }]]);
+  cpu.excludeSelf(samples, 1);
+  assert.equal(samples.has(1), true, "the caller's original map must be untouched");
+});
+
+test("isSelfGroup excludes an NFD-encoded label via NFC normalization", () => {
+  // macOS `ps` emits the app's bundle name in NFD: "U" (U+0055) followed by
+  // a separate U+0308 COMBINING DIAERESIS codepoint, not the precomposed
+  // U+00DC a typed source literal normally contains. Both strings below are
+  // built from explicit \uXXXX escapes rather than typed accented
+  // characters, so this test cannot silently be "fixed" into a vacuous
+  // NFC-vs-NFC comparison by an editor or formatting tool.
+  const nfdLabel = "U\u0308bersicht"; // U+0055, U+0308, b,e,r,s,i,c,h,t (decomposed)
+  const nfcLabel = "\u00DCbersicht"; // U+00DC, b,e,r,s,i,c,h,t (precomposed)
+  assert.notEqual(
+    nfdLabel, nfcLabel,
+    "sanity check: NFD and NFC encodings of the same word are different JS strings"
+  );
+  assert.equal(nfdLabel.normalize("NFC"), nfcLabel, "sanity check: both normalize to the same NFC string");
+  const selfLabels = new Set([nfcLabel, "Uebersicht"]);
+  assert.equal(cpu.isSelfGroup({ kind: "app", label: nfdLabel }, selfLabels), true);
+});
+
+test("isSelfGroup never hides a dev-kind group, even one sharing a self label", () => {
+  // A project-less "node" process is exactly what the widget exists to
+  // surface, so dev-kind groups must never be filtered by label.
+  const selfLabels = new Set(["node"]);
+  assert.equal(cpu.isSelfGroup({ kind: "dev", label: "node" }, selfLabels), false);
+});
+
+test("isSelfGroup does not exclude unrelated app labels", () => {
+  const selfLabels = new Set(["Übersicht", "Uebersicht"]);
+  assert.equal(cpu.isSelfGroup({ kind: "app", label: "Google Chrome" }, selfLabels), false);
+});

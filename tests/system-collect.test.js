@@ -67,28 +67,23 @@ test("group percentages are per-core and may exceed the headline", () => {
   assert.ok(d.cpu.cores > 0);
 });
 
-// Regression test for a dead self-exclusion filter: the collector used to try
-// excluding its own "node" row by label, but classify() always tags a bare
-// node binary as kind "dev", so the label-based guard could never fire — the
-// collector's own entry was never actually removed. It is now excluded by
-// process.pid before grouping (a fresh PID every refresh, so it can never
-// accrue a delta and would otherwise show up as a single zero-percent row).
-// Two consecutive real (non-mock) runs each spawn a distinct collector
-// subprocess with a distinct PID, so this exercises the exclusion on both
-// the first (estimated) and second (delta-based) samples.
-test("collector never lists its own process (regression: dead label-based self-filter)", () => {
+// This does NOT prove self-exclusion works — groupProcesses aggregates every
+// bare "node" process on the machine into one row, so a broken filter would
+// still pass this check as long as any other node process exists (see
+// tests/system-cpu.test.js for the real regression tests: excludeSelf and
+// isSelfGroup are unit-tested directly). This is a live-execution sanity
+// check instead: on a machine actually running Übersicht (as this repo's dev
+// machine is), its NFD-encoded bundle label must genuinely not surface,
+// proving the fix against the real `ps` output rather than a hand-written
+// NFC literal that could pass even if normalization were missing.
+test("a running Übersicht process never appears in cpu.top", () => {
   const cache = tmpCache();
   const first = run([], cache);
   const second = run([], cache);
   for (const d of [first, second]) {
-    const selfLike = d.cpu.top.find(
-      (g) => g.label === "node" && g.count === 1 && g.percent === 0
+    const ubersicht = d.cpu.top.find(
+      (g) => String(g.label || "").normalize("NFC") === "Übersicht"
     );
-    assert.equal(
-      selfLike,
-      undefined,
-      "cpu.top must never contain a bare zero-percent single-process 'node' row " +
-        "(the signature of the collector's own un-excluded process)"
-    );
+    assert.equal(ubersicht, undefined, "Übersicht's own app process must be excluded");
   }
 });

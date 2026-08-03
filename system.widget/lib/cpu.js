@@ -108,7 +108,34 @@ function topBy(groups, field, n) {
   return [...groups].sort((a, b) => b[field] - a[field]).slice(0, n);
 }
 
+// Exclude the collector's own process before grouping: once groupProcesses
+// has collapsed samples into labelled rows the pid is gone, and label-based
+// exclusion cannot distinguish "the collector, briefly, this refresh" from
+// "the user's own long-running node process" — both would classify as a
+// bare "node" row. PID is precise and can never collide with real work.
+// Pure: returns a new Map, leaving the caller's samples untouched.
+function excludeSelf(samples, selfPid) {
+  const out = new Map(samples);
+  out.delete(selfPid);
+  return out;
+}
+
+// True when a group should be hidden as "this is Übersicht itself", not the
+// user's own work. Dev-kind groups are never hidden by label — a
+// project-less `node` process is exactly what this widget exists to surface.
+// Labels are compared after Unicode NFC normalization on both sides: macOS
+// `ps` can emit an accented bundle name (e.g. Übersicht.app) in NFD —
+// decomposed "U" + U+0308 COMBINING DIAERESIS — while a source string
+// literal for the same name is ordinarily NFC (precomposed U+00DC).
+// Set.has() does no normalization of its own, so comparing raw strings
+// silently fails whenever the two representations disagree.
+function isSelfGroup(group, selfLabels) {
+  if (group.kind === "dev") return false;
+  return selfLabels.has(String(group.label || "").normalize("NFC"));
+}
+
 module.exports = {
   parseCpuTime, parsePsSample, computeDeltas, DISCONTINUITY_SECONDS,
   DEV_BINARIES, bundleName, classify, groupProcesses, topBy,
+  excludeSelf, isSelfGroup,
 };
