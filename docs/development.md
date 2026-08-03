@@ -15,8 +15,8 @@ Preview the raw JSON payload the widget renders from:
 ./claude-usage.widget/lib/run.sh | python3 -m json.tool
 ```
 
-`lib/theme.js` is vendored into each widget. After editing it, run
-`npm run sync:themes` — `npm test` fails if the copies drift. See
+Every module in the repo-root `lib/` is vendored into each widget. After editing
+one, run `npm run sync:shared` — `npm test` fails if the copies drift. See
 [theming.md](theming.md).
 
 `npm run check:bundle` runs esbuild over every widget's `index.jsx` to catch

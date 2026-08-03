@@ -1,0 +1,13 @@
+{
+  "theme": null,
+  "layout": "ghost",
+  "position": { "corner": "bottom-left", "offset": 150 },
+  "refreshSeconds": 3,
+  "historyMinutes": 5,
+  "topN": 3,
+  "gpuThreshold": 10,
+  "spike": { "percent": 70, "seconds": 15 },
+  "show": { "gpu": true, "memory": true, "history": true, "spike": true },
+  "scale": 1.5,
+  "mock": false
+}

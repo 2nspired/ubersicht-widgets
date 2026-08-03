@@ -540,11 +540,11 @@ module.exports = { parseCpuTime, parsePsSample, computeDeltas, DISCONTINUITY_SEC
 - [ ] **Step 6: Run tests to verify they pass**
 
 Run: `node --test tests/system-cpu.test.js`
-Expected: PASS, 10 tests
+Expected: PASS, 11 tests
 
 - [ ] **Step 7: Run the suite and commit**
 
-Run: `npm test` — expected PASS, 104 tests
+Run: `npm test` — expected PASS, 105 tests
 
 ```bash
 git add system.widget/lib/cpu.js tests/system-cpu.test.js tests/fixtures/ps-sample.txt
@@ -760,11 +760,11 @@ module.exports = {
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `node --test tests/system-cpu.test.js`
-Expected: PASS, 19 tests
+Expected: PASS, 20 tests
 
 - [ ] **Step 5: Run the suite and commit**
 
-Run: `npm test` — expected PASS, 113 tests
+Run: `npm test` — expected PASS, 114 tests
 
 ```bash
 git add system.widget/lib/cpu.js tests/system-cpu.test.js
@@ -1027,7 +1027,7 @@ Expected: PASS, 11 tests
 
 - [ ] **Step 8: Run the suite and commit**
 
-Run: `npm test` — expected PASS, 124 tests
+Run: `npm test` — expected PASS, 125 tests
 
 ```bash
 git add system.widget/lib/memory.js system.widget/lib/gpu.js \
@@ -1243,7 +1243,7 @@ Expected: PASS, 11 tests
 
 - [ ] **Step 5: Run the suite and commit**
 
-Run: `npm test` — expected PASS, 135 tests
+Run: `npm test` — expected PASS, 136 tests
 
 ```bash
 git add system.widget/lib/history.js tests/system-history.test.js
@@ -1664,7 +1664,7 @@ Confirm: `cpu.percent` is a sane 0–100, `cpu.top` names real applications with
 
 - [ ] **Step 8: Run the suite and commit**
 
-Run: `npm test` — expected PASS, 140 tests
+Run: `npm test` — expected PASS, 141 tests
 
 ```bash
 git add system.widget/ tests/system-collect.test.js
@@ -1926,7 +1926,7 @@ Expected: no output, exit 0. This is what catches forbidden Babel syntax.
 - [ ] **Step 3: Run the suite**
 
 Run: `npm test`
-Expected: PASS, 140 tests — including the token-list drift test, which now checks three widgets.
+Expected: PASS, 141 tests — including the token-list drift test, which now checks three widgets.
 
 - [ ] **Step 4: Install and verify visually**
 
@@ -2078,7 +2078,7 @@ Expected: no output, exit 0.
 
 - [ ] **Step 5: Run the suite**
 
-Run: `npm test` — expected PASS, 140 tests
+Run: `npm test` — expected PASS, 141 tests
 
 - [ ] **Step 6: Verify both layouts visually**
 
@@ -2123,7 +2123,7 @@ Follow the structure of `dev-servers.widget/README.md` (read it first). It must 
   - *Grouping.* Processes are grouped by owning application — Chrome's 57 processes become one row. Development processes (`node`, `python`, `deno`, `bun`, `ruby`, `go`, `cargo`, `rustc`, `java`) are labelled by project instead, because collapsing thirteen `node` processes into one row hides the useful part.
   - *Memory figures are RSS, and grouped RSS overstates real usage,* because shared pages are counted once per process. Activity Monitor's "Memory" column uses a different metric with no cheap CLI equivalent. Treat the numbers as a ranking, not an audit.
 - A note that GPU is device-level only, hidden below `gpuThreshold`, and that per-process GPU attribution requires root (`powermetrics`) and is therefore unavailable.
-- A note that history is cached at `~/.cache/ubersicht-system-widget/history.json`, and that `"show": {"history": false}` makes the widget fully stateless and writes no cache.
+- A note that history is cached at `~/.cache/ubersicht-system-widget/history.json`, and that `"show": {"history": false}` does **not** make the widget fully stateless: the collector still writes the cache every refresh, because the previous `ps` sample it holds is what CPU percentages are diffed against — only the sample ring is suppressed.
 
 - [ ] **Step 2: Add the widget to the root README**
 
@@ -2146,7 +2146,7 @@ In `docs/theming.md`, in the token table's introduction, mention that three widg
 
 - [ ] **Step 4: Verify and commit**
 
-Run: `npm test` — expected PASS, 140 tests
+Run: `npm test` — expected PASS, 141 tests
 
 ```bash
 git add system.widget/README.md README.md docs/theming.md
@@ -2167,7 +2167,7 @@ EOF
 
 ## Final verification
 
-- [ ] `npm test` — 140 tests, all passing
+- [ ] `npm test` — 150 tests, all passing
 - [ ] `npm run check:bundle` — all three widgets compile
 - [ ] `npm run sync:shared` followed by `git status` — clean, proving vendored copies are in sync
 - [ ] `git status` — clean

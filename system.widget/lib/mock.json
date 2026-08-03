@@ -1,0 +1,29 @@
+{
+  "cpu": {
+    "percent": 47,
+    "cores": 12,
+    "top": [
+      { "label": "Google Chrome", "kind": "app", "percent": 202, "count": 57 },
+      { "label": "node · abra-abr", "kind": "dev", "percent": 38, "count": 2 },
+      { "label": "WindowServer", "kind": "exe", "percent": 29, "count": 1 }
+    ]
+  },
+  "memory": {
+    "totalBytes": 68719476736, "wiredBytes": 3758096384, "activeBytes": 25446842368,
+    "compressedBytes": 4831838208, "availableBytes": 34682699776,
+    "usedBytes": 34036776960, "usedPercent": 50, "pressure": "normal", "swapUsedBytes": 0,
+    "top": [
+      { "label": "Google Chrome", "kind": "app", "rssKb": 8808038, "count": 57 },
+      { "label": "node · project-tracker", "kind": "dev", "rssKb": 624640, "count": 1 },
+      { "label": "Code Helper", "kind": "app", "rssKb": 491520, "count": 4 }
+    ]
+  },
+  "gpu": { "utilization": 34, "allocBytes": 4959191040, "inUseBytes": 671350784, "visible": true },
+  "history": [
+    { "t": 1, "cpu": 20, "mem": 48, "gpu": 4 }, { "t": 3001, "cpu": 95, "mem": 52, "gpu": 30 },
+    { "t": 6001, "cpu": 98, "mem": 55, "gpu": 34 }, { "t": 9001, "cpu": 91, "mem": 58, "gpu": 31 },
+    { "t": 12001, "cpu": 88, "mem": 60, "gpu": 28 }, { "t": 15001, "cpu": 90, "mem": 62, "gpu": 33 },
+    { "t": 18001, "cpu": 22, "mem": 61, "gpu": 6 }, { "t": 21001, "cpu": 20, "mem": 60, "gpu": 3 }
+  ],
+  "spike": { "peak": 98, "aboveSeconds": 92, "active": false, "endedSecondsAgo": 15 }
+}

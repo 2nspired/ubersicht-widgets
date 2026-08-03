@@ -1,0 +1,43 @@
+    1  87:10.26  27616 /sbin/launchd
+  341  23:20.35  86480 /usr/libexec/logd
+  342   0:00.50   7184 /usr/libexec/smd
+  343   2:57.69  23600 /usr/libexec/UserEventAgent
+  345  15:03.29  13344 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd
+  346   0:37.86  18960 /System/Library/PrivateFrameworks/MediaRemote.framework/Support/mediaremoted
+  349   0:48.23  13728 /usr/sbin/systemstats
+  350   2:31.62 208320 /Applications/Obsidian.app/Contents/MacOS/Obsidian
+  351   0:05.18  14368 /System/Library/PrivateFrameworks/MobileAccessoryUpdater.framework/Support/accessoryupdaterd
+  352   0:00.07   2688 /usr/libexec/uarpassetmanagerd
+  353   2:10.81  15840 /usr/libexec/configd
+  354   0:00.10   4368 endpointsecurityd
+  355   4:44.28  13792 /System/Library/CoreServices/powerd.bundle/powerd
+  356   0:00.90   3792 /usr/libexec/IOMFB_bics_daemon
+  357   2:06.10  83440 /Applications/Obsidian.app/Contents/Frameworks/Obsidian Helper (GPU).app/Contents/MacOS/Obsidian Helper (GPU)
+  358   0:04.46  49520 /usr/libexec/amfid
+  359   0:14.05  49808 /Applications/Obsidian.app/Contents/Frameworks/Obsidian Helper.app/Contents/MacOS/Obsidian Helper
+  360   0:00.23   5424 /usr/libexec/remoted
+  362   0:00.86  14416 /usr/libexec/keybagd
+  363   0:00.68   8592 /System/Library/PrivateFrameworks/MobileSoftwareUpdate.framework/Support/softwareupdated
+  364   0:00.03   2336 /System/Library/PrivateFrameworks/CoreSpeech.framework/corespeechd_system
+  366   0:06.38   3472 /usr/libexec/watchdogd
+  370  33:19.90  64448 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds
+  371   0:02.60   6048 /System/Library/CoreServices/iconservicesd
+  372   0:01.61   8672 /usr/libexec/kernelmanagerd
+  373   0:37.55   6000 /usr/libexec/diskarbitrationd
+  376   1:20.15  44128 /usr/libexec/coreduetd
+  377   0:29.30   2896 /usr/sbin/syslogd
+  379   1:14.89   5280 /usr/libexec/thermalmonitord
+  380   3:48.49  18560 /System/Library/PrivateFrameworks/CoreDuetContext.framework/Resources/contextstored
+  381   0:27.18  17120 /usr/libexec/xprotectd
+  382   7:46.48  24608 /usr/libexec/opendirectoryd
+  383   2:04.68  35776 /System/Library/PrivateFrameworks/ApplePushService.framework/apsd
+  384  20:28.08  23904 /System/Library/CoreServices/launchservicesd
+  385   0:13.22   7680 /usr/libexec/timed
+  386   0:35.09   6352 /System/Library/PrivateFrameworks/MobileDevice.framework/Versions/A/Resources/usbmuxd
+  387   1:29.14  12256 /usr/sbin/securityd
+  389  39:18.45  38832 /usr/libexec/locationd
+  390   0:04.24  14672 /usr/libexec/nesessionmanager
+  391   0:05.97  45792 /System/Library/PrivateFrameworks/SafariPlatformSupport.framework/Versions/A/XPCServices/com.apple.SafariPlatformSupport.Helper.xpc/Contents/MacOS/com.apple.SafariPlatformSupport.Helper
+  357   2:06.04  83440 /Applications/Obsidian.app/Contents/Frameworks/Obsidian Helper (GPU).app/Contents/MacOS/Obsidian Helper (GPU)
+90238   6:25.17  78624 /Applications/Docker.app/Contents/MacOS/Docker Desktop.app/Contents/Frameworks/Docker Desktop Helper (GPU).app/Contents/MacOS/Docker Desktop Helper (GPU)
+59491   0:00.51  82848 /Users/me/.local/share/fnm/node-versions/v22.22.2/installation/bin/node
