@@ -4,9 +4,11 @@ Copy everything below the line into a new chat.
 
 ---
 
-I want to design and build a **native macOS app** that replaces my Übersicht widget setup with something better: real native rendering, a proper settings panel, and a unified visual design across all widgets.
+I want to design and build a **native macOS app** for my desktop widgets — real native rendering, a proper settings panel, and a unified visual design. Today they run as Übersicht widgets; whether the native app replaces that or coexists with it is one of the open questions below, not a decision I've made.
 
 Please **brainstorm this properly before any code** — I want a design and spec first. Also **create a project for this in pigeon** and track the plan/backlog there as we go.
+
+**Five decisions are deliberately unmade.** They're listed at the end. Please don't assume answers to them from the framing here — ask me. They shape almost everything else, so they're worth getting right before the design hardens.
 
 ## What exists today
 
@@ -27,7 +29,7 @@ Repo: `/Users/thomastrudzinski/Projects/2nspired/ubersicht-mac` (GitHub: `2nspir
 
 - **Native, not a web view.** SwiftUI/AppKit, rendering directly.
 - **A real control panel** — live adjustment of size, fonts, layout, spacing, colours, per widget. Right now tuning anything means editing JSON and waiting for a refresh.
-- **A unifying theme and design system** across all widgets. The web version got a token system late; the native one should be designed around it from the start.
+- **A unifying visual identity** across all widgets. The web version grew its token system late, bolted onto widgets that had already drifted apart. I want the native one to feel like one designed thing. *How* that's achieved — reusing the existing token vocabulary, or building something more native — is open decision 3, not a given.
 - **Built on Apple-native frameworks throughout**, chosen so future features are easy to add rather than bolted on.
 
 ## Please explicitly consider these Apple frameworks
@@ -91,12 +93,23 @@ Measured and verified: with the overlay at that level, wallpaper luminance dropp
 - `osascript -e 'tell application "Übersicht" to quit'` **silently fails**. So do `pkill -x` and `killall` — the umlaut defeats name matching. Only `kill <pid>` works.
 - Übersicht rewrites `WidgetSettings.json` on quit, so the order to edit it is **kill → edit → launch**.
 
-## Questions I'd like the design to settle
+## The five open decisions — ask me, don't assume
 
-- Does this **replace** the Übersicht widgets or coexist during a migration?
-- Is it one app with multiple widget "panes", or a host app plus a widget model that could take third-party widgets later?
-- Where does configuration live, and does the existing `theme.json` / token system carry over or get redesigned?
-- How much of the design system is worth formalising up front given "future adds" is an explicit goal?
-- Distribution: ad-hoc signed for my own machine, or notarized for sharing?
+These are genuinely undecided. Each one changes the architecture materially, so please raise them early in the brainstorm rather than picking a default and building on it. I've noted what hinges on each so you can ask a sharper question than "which do you want?".
+
+**1. Replace or coexist?**
+Does the native app take over from the Übersicht widgets, or run alongside them during a migration? Hinges on: whether the existing widgets keep being maintained, whether both can read the same config, and whether a half-migrated state needs to look coherent on one desktop. Coexistence also means two things drawing on the same screen — worth checking they don't fight over layers or duplicate the same reading.
+
+**2. One app, or a host plus a widget model?**
+A single app with three built-in panes is far simpler. A host app with a defined widget interface is more work but leaves room for adding widgets later without touching the core — and possibly third-party ones. Hinges on how much I'll keep adding. Don't over-engineer this on my behalf; argue for the simpler option if you think it's right.
+
+**3. Does the existing theme system carry over, or get redesigned?**
+There's a working 13-token system today, but it was retrofitted onto widgets that had already drifted — two different greys for the same label style, radii of 12/14/16 for no reason. Hinges on whether those tokens are actually the right vocabulary for a native app with a live control panel, or whether starting from SwiftUI's own idioms produces something better. A native design system might want type ramps, spacing scales and semantic roles that the CSS token set never had.
+
+**4. How much design system up front?**
+"Future adds" is an explicit goal, which argues for formalising early. But over-formalising before there's a second real use case is how design systems become ceremony. Hinges on your read after seeing the three existing widgets — tell me where the genuine shared vocabulary is versus where I just repeated myself.
+
+**5. Distribution.**
+Ad-hoc signed for my machine only, or notarized so I can share it? Hinges on whether this is a personal tool or something the repo's existing users might want. Notarization needs a paid Apple Developer account — factor that in before recommending it.
 
 Start by exploring the repo, then brainstorm with me. Flag early if this is really several projects rather than one — I'd rather decompose than write one enormous spec. And set up the pigeon project as part of getting started.
