@@ -6,6 +6,8 @@ Copy everything below the line into a new chat.
 
 I want to design and build a **native macOS app** for my desktop widgets — real native rendering, a proper settings panel, and a unified visual design. Today they run as Übersicht widgets; whether the native app replaces that or coexists with it is one of the open questions below, not a decision I've made.
 
+**Project name: `strata`** — new repo at `/Users/thomastrudzinski/Projects/2nspired/strata`, sibling to the existing widget repo. Named for the window-layer stack the app has to manipulate (wallpaper → desktop window → Finder icons → widgets → app windows), which turns out to be the technical crux of the whole thing. Not final; say so if something better emerges from the design.
+
 Please **brainstorm this properly before any code** — I want a design and spec first. Also **create a project for this in pigeon** and track the plan/backlog there as we go.
 
 **Five decisions are deliberately unmade.** They're listed at the end. Please don't assume answers to them from the framing here — ask me. They shape almost everything else, so they're worth getting right before the design hardens.
