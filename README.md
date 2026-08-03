@@ -41,7 +41,8 @@ see whether a spike is ongoing or already over. Two layouts.
 A thin full-screen wash that darkens the desktop background by a small,
 configurable amount, leaving desktop icons, other widgets, and application
 windows untouched. No collector, no dependencies — it just reads its own
-config. Requires one manual step after install (see its README).
+config. Requires one extra step after install, by menu click or by editing
+a settings file (see its README).
 
 → [Install & docs](dimmer.widget/README.md)
 
