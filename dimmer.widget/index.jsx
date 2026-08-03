@@ -13,6 +13,19 @@ export const command = "cat dimmer.widget/config.json";
 // Config edits apply within one refresh cycle.
 export const refreshFrequency = 10000;
 
+// Übersicht wraps each widget in a positioned container that is not full-bleed
+// by default. Without this className the 100vw/100vh overlay below renders but
+// is clipped to nothing — verified empirically, the wallpaper stayed
+// pixel-identical. The three sibling widgets all export a className too.
+export const className = `
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+`;
+
+
 const DEFAULTS = {
   amount: 0.2,
   color: "0, 0, 0",
@@ -72,10 +85,11 @@ const parseConfig = (output) => {
   return sanitizeConfig(raw);
 };
 
-// z-index: -1 so the sibling widgets in Übersicht's shared document paint
-// above this one — all Übersicht widgets render into one DOM document,
-// which is what keeps claude-usage/dev-servers/system unaffected regardless
-// of this widget's own window layer.
+// z-index MUST NOT be negative. A negative z-index pushes this element behind
+// the document root and it never paints at all — verified empirically, the
+// wallpaper stayed pixel-identical. Sibling widgets are kept unaffected by the
+// window layer (this widget lives in Übersicht's background window), not by
+// z-index, so 0 is correct here.
 //
 // pointer-events: none is defence in depth. It isn't what makes clicks safe
 // — Finder's desktop window sits physically above Übersicht's background
@@ -87,7 +101,7 @@ const overlay = css`
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: -1;
+  z-index: 0;
   pointer-events: none;
 `;
 

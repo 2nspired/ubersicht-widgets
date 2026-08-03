@@ -8,7 +8,10 @@ icons, other widgets, and application windows are unaffected.
 **This widget does nothing correct until you send it to Übersicht's
 background layer.** In the default (foreground) layer, the overlay renders
 *above* Finder's desktop icons and dims them along with the wallpaper — the
-one outcome this widget exists to avoid.
+one outcome this widget exists to avoid. Left in the foreground layer it also
+renders above the other Übersicht widgets themselves, not just the desktop
+icons — confirmed visually — so leaving this step undone dims everything on
+screen, not only the wallpaper.
 
 After installing (below):
 
@@ -52,16 +55,41 @@ untouched.
 ## What it does
 
 A single fixed, full-viewport, `pointer-events: none` element painted with a
-flat `rgba(<color>, <amount>)` wash, sitting at `z-index: -1`. All Übersicht
-widgets render into one shared document, which is what keeps `claude-usage`,
-`dev-servers`, and `system` painting above this widget regardless of its own
-window layer — the background-layer step above is about the desktop, not
-about the other widgets.
+flat `rgba(<color>, <amount>)` wash, sitting at `z-index: 0`. All Übersicht
+widgets render into one shared document, so what actually keeps
+`claude-usage`, `dev-servers`, and `system` unaffected is this widget's own
+*window layer* — it must be the one sitting in Übersicht's background window,
+below the shared document those widgets render into — not `z-index`, which
+only orders elements within a single layer. That's why the required manual
+step above is not optional: skip it and this widget stays in the same
+(foreground) layer as the other widgets and dims them too.
 
 Interaction safety is by construction, not by CSS: Finder's desktop window
 sits physically above Übersicht's background layer, so desktop clicks can't
 reach the overlay either way. `pointer-events: none` is set anyway as
 defence in depth.
+
+### Why it renders
+
+Two independent bugs kept this widget from painting anything after it was
+first merged, both found by installing it and measuring wallpaper pixel
+luminance before/after:
+
+- **A negative `z-index` silently prevents rendering.** `z-index: -1` pushed
+  the overlay behind the document root; nothing painted, at any `amount`.
+  There's no console error or visual clue — the wallpaper just stays
+  pixel-identical. Fixed by using `z-index: 0`; see the note above on why 0
+  is correct without reopening the sibling-widget problem.
+- **A missing `className` export clips the overlay to nothing.** Übersicht
+  wraps each widget in a container that is not full-bleed by default, so a
+  `100vw`/`100vh` overlay without an exported `className` widening that
+  container renders into a zero-size box. The three sibling widgets
+  (`claude-usage`, `dev-servers`, `system`) all export a `className` for the
+  same reason; `dimmer.widget/index.jsx` now does too.
+
+Both were necessary — removing either fix on its own made the overlay vanish
+again. If you're debugging a "widget installed, background layer set, still
+nothing dims" report, check these two before anything else.
 
 ## Install
 
@@ -81,12 +109,38 @@ out-of-range values fall back to the defaults below rather than throwing.
 
 | Field | Type | Default | Meaning |
 |---|---|---|---|
-| `amount` | number, 0–1 | `0.2` | Wash opacity, clamped to `[0, 1]`. `0.1` is arithmetically an exact ×0.9 luminance multiplier — literally "10%" — but visually near-invisible on a bright wallpaper. `0.2` is the useful default; expect a good range of `0.18`–`0.22`. |
+| `amount` | number, 0–1 | `0.35` | Wash opacity, clamped to `[0, 1]`. See "Opacity calibration" below — `0.35` is the lowest value verified to actually render. |
 | `color` | `"r, g, b"` string | `"0, 0, 0"` | Wash color as an RGB triple. Each channel is clamped to a valid byte. |
 | `filter` | CSS filter string \| `null` | `null` | Optional `backdrop-filter` (e.g. `"blur(2px)"`, `"saturate(0.8)"`), layered on top of the flat wash — set only if you want blur/desaturate in addition to darkening. |
 
 Übersicht re-reads `config.json` every 10 seconds (`refreshFrequency` in
 `index.jsx`), so edits apply without restarting anything.
+
+### Opacity calibration (measured)
+
+With both rendering bugs above fixed, wallpaper luminance was measured at
+three fixed screen points, compared against a known-undimmed baseline
+capture:
+
+| `amount` | measured luminance ratio | result |
+|---|---|---|
+| 0.2 | 1.000 (pixel-identical) | nothing rendered |
+| 0.35 | 0.813 / 0.812 / 0.821 | clean, visible dim |
+| 0.6 | 0.495 / 0.504 / 0.513 | heavy dim |
+| 1.0 | — | fully opaque black |
+
+Two things worth knowing before you tune this:
+
+- The relationship is **not** linear in alpha. `0.35` yields a ~0.82
+  luminance ratio rather than the ~0.65 you'd expect from `1 − amount`, and
+  `0.6` yields ~0.50 rather than ~0.40. Colour-space/gamma effects in
+  compositing account for the gap.
+- **At `0.2`, nothing rendered at all** — reproducibly, even after a
+  25-second settle — while `0.35` rendered immediately. This threshold is
+  unexplained; it's reported here as an observation, not a theory. Don't
+  assume values just below `0.35` are safe: `0.35` is the lowest value
+  actually verified to render, and values below roughly `0.3` may render
+  nothing.
 
 ### `backdrop-filter` works here
 
