@@ -274,7 +274,7 @@ const Ticker = ({ d }) => {
 
 const cornerStyle = (corner, scale, offset) => {
   const [v, h] = String(corner || "top-right").split("-");
-  const safeOffset = typeof offset === "number" && offset >= 0 ? offset : 0;
+  const safeOffset = Number.isFinite(offset) && offset >= 0 ? offset : 0;
   return {
     [v === "bottom" ? "bottom" : "top"]: (8 + safeOffset) / scale,
     [h === "left" ? "left" : "right"]: 12 / scale,
