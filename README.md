@@ -36,6 +36,15 @@ see whether a spike is ongoing or already over. Two layouts.
 
 → [Install & docs](system.widget/README.md)
 
+### [dimmer.widget](dimmer.widget/) — darken the wallpaper, nothing else
+
+A thin full-screen wash that darkens the desktop background by a small,
+configurable amount, leaving desktop icons, other widgets, and application
+windows untouched. No collector, no dependencies — it just reads its own
+config. Requires one manual step after install (see its README).
+
+→ [Install & docs](dimmer.widget/README.md)
+
 ## Installing a widget
 
 Every widget installs the same way — clone once, symlink the widgets you want:
@@ -70,7 +79,7 @@ widgets can override with `"theme": "<name>"` in their own `config.json`.
 ## Development
 
 ```bash
-npm test   # node --test; covers all widgets' lib/ modules
+npm test   # node --test; covers all widgets' lib/ modules (+ dimmer's config.json)
 ```
 
 - [Development & testing](docs/development.md)
