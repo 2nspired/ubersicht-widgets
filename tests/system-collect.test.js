@@ -151,3 +151,43 @@ test("config values (topN, show.history, gpuThreshold) actually drive the collec
   assert.ok(d.cpu.percent >= 0 && d.cpu.percent <= 100, "headline stays a valid percentage");
 });
 
+// position.offset lets system.widget stack above another corner-anchored
+// widget (e.g. dev-servers, also bottom-left). readConfig()'s merge used to
+// spread `...user` wholesale over `...DEFAULTS`, so a user config supplying
+// only `position.corner` replaced the whole `position` object and silently
+// dropped the `offset` default (and vice versa for a config supplying only
+// `position.offset`). These assert the merged, emitted config.position
+// always carries both keys.
+function runWithConfig(configOverrides) {
+  const { lib } = makeTempWidgetDir(configOverrides);
+  const out = execFileSync(process.execPath, [path.join(lib, "collect.js")], {
+    encoding: "utf8",
+    env: Object.assign({}, process.env, { UBERSICHT_SYSTEM_WIDGET_CACHE: tmpCache() }),
+  });
+  return JSON.parse(out);
+}
+
+test("position.offset is carried through when explicitly set alongside corner", () => {
+  const d = runWithConfig({ position: { corner: "bottom-left", offset: 150 } });
+  assert.equal(d.config.position.corner, "bottom-left");
+  assert.equal(d.config.position.offset, 150);
+});
+
+test("position.offset defaults to 0 when position is omitted entirely", () => {
+  const d = runWithConfig({});
+  assert.equal(d.config.position.corner, "top-right");
+  assert.equal(d.config.position.offset, 0);
+});
+
+test("a user config supplying only position.corner does not drop the position.offset default", () => {
+  const d = runWithConfig({ position: { corner: "bottom-left" } });
+  assert.equal(d.config.position.corner, "bottom-left");
+  assert.equal(d.config.position.offset, 0, "offset default must survive a partial position override");
+});
+
+test("a user config supplying only position.offset does not drop the position.corner default", () => {
+  const d = runWithConfig({ position: { offset: 42 } });
+  assert.equal(d.config.position.offset, 42);
+  assert.equal(d.config.position.corner, "top-right", "corner default must survive a partial position override");
+});
+

@@ -106,7 +106,8 @@ Edit `system.widget/config.json`. Everything is optional; defaults shown.
 |---|---|---|---|
 | `theme` | string \| `null` | `null` | Theme name overriding the repo-root `theme.json`. `null` follows the global choice. See [theming](../docs/theming.md). |
 | `layout` | `"ghost"` \| `"ticker"` | `"ghost"` | Corner card with stream and lists · single-line pill. |
-| `position.corner` | `"top-right"` \| `"top-left"` \| `"bottom-right"` \| `"bottom-left"` | `"top-right"` | Which screen corner the widget sits in. |
+| `position.corner` | `"top-right"` \| `"top-left"` \| `"bottom-right"` \| `"bottom-left"` | `"bottom-left"` | Which screen corner the widget sits in. |
+| `position.offset` | number | `150` | Pixels to push the widget away from its anchored edge along the vertical axis (downward from a `top-*` corner, upward from a `bottom-*` corner). Use this to stack the widget above or below another corner-anchored widget in the same corner — e.g. `dev-servers.widget`, which also defaults to `bottom-left` — instead of overlapping it. A missing, non-numeric, or negative value is treated as `0`. |
 | `refreshSeconds` | number | `3` | Documentation of intent only — Übersicht's actual interval is the static `refreshFrequency` export in `index.jsx` (ms); change both to change cadence. |
 | `historyMinutes` | number | `5` | Length of the rolling history window kept for the stream/sparkline and spike detection. |
 | `topN` | number | `3` | How many processes appear in the top-CPU / top-memory lists (the ticker layout caps at 2 regardless). |

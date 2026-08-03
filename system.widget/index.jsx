@@ -272,10 +272,11 @@ const Ticker = ({ d }) => {
   );
 };
 
-const cornerStyle = (corner, scale) => {
+const cornerStyle = (corner, scale, offset) => {
   const [v, h] = String(corner || "top-right").split("-");
+  const safeOffset = typeof offset === "number" && offset >= 0 ? offset : 0;
   return {
-    [v === "bottom" ? "bottom" : "top"]: 8 / scale,
+    [v === "bottom" ? "bottom" : "top"]: (8 + safeOffset) / scale,
     [h === "left" ? "left" : "right"]: 12 / scale,
   };
 };
@@ -293,7 +294,11 @@ export const render = ({ output }) => {
   }
   const config = d.config || {};
   const scale = typeof config.scale === "number" ? config.scale : 1;
-  const style = cornerStyle(config.position && config.position.corner, scale);
+  const style = cornerStyle(
+    config.position && config.position.corner,
+    scale,
+    config.position && config.position.offset
+  );
   style.zoom = scale;
   Object.assign(style, themeVars(d.theme));
 

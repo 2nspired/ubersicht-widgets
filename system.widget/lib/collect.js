@@ -15,7 +15,7 @@ const { resolveTheme } = require("./theme");
 const DEFAULTS = {
   theme: null,
   layout: "ghost",
-  position: { corner: "top-right" },
+  position: { corner: "top-right", offset: 0 },
   refreshSeconds: 3,
   historyMinutes: 5,
   topN: 3,
@@ -32,6 +32,7 @@ function readConfig() {
     const user = JSON.parse(raw);
     return {
       ...DEFAULTS, ...user,
+      position: { ...DEFAULTS.position, ...(user.position || {}) },
       show: { ...DEFAULTS.show, ...(user.show || {}) },
       spike: { ...DEFAULTS.spike, ...(user.spike || {}) },
     };

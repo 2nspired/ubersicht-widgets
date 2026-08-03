@@ -1,7 +1,7 @@
 {
   "theme": null,
   "layout": "ghost",
-  "position": { "corner": "top-right" },
+  "position": { "corner": "bottom-left", "offset": 150 },
   "refreshSeconds": 3,
   "historyMinutes": 5,
   "topN": 3,
