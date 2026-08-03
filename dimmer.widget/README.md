@@ -3,24 +3,61 @@
 A full-screen wash that darkens your wallpaper by a small amount — desktop
 icons, other widgets, and application windows are unaffected.
 
-## ⚠️ Required manual step — read this first
+## ⚠️ Required setup step — read this first
 
 **This widget does nothing correct until you send it to Übersicht's
 background layer.** In the default (foreground) layer, the overlay renders
 *above* Finder's desktop icons and dims them along with the wallpaper — the
 one outcome this widget exists to avoid.
 
-After installing (below):
+There are two ways to set it — pick one after installing (below).
+
+### Option A: menu bar (simplest)
 
 1. Click the Übersicht icon in the menu bar.
 2. Find the **dimmer** entry in the widget list.
 3. Click it, then choose **"Send to background."**
 
-There is no way around this click. Übersicht's per-widget window layer is
-not settable from `config.json` and is not scriptable via AppleScript —
-"Send to background" only exists as a manual menu action. Do it once per
-Übersicht relaunch policy change (it should stick across normal restarts,
-but re-check it after any Übersicht update).
+This is a one-time click; it should stick across normal restarts, but
+re-check it after any Übersicht update.
+
+### Option B: edit `WidgetSettings.json` (scriptable)
+
+Übersicht persists per-widget settings, including the background/foreground
+layer, to:
+
+```
+~/Library/Application Support/tracesOf.Uebersicht/WidgetSettings.json
+```
+
+Each widget has an entry keyed by its path with non-alphanumerics replaced
+by hyphens — for this widget, `dimmer-widget-index-jsx`. The background
+layer is the boolean `inBackground` in that entry. A full working entry,
+confirmed to survive an Übersicht quit/relaunch:
+
+```json
+"dimmer-widget-index-jsx": {
+  "showOnAllScreens": true,
+  "showOnMainScreen": false,
+  "showOnSelectedScreens": false,
+  "hidden": false,
+  "screens": [],
+  "inBackground": true
+}
+```
+
+Two caveats:
+
+- The entry generally only exists once Übersicht has seen the widget at
+  least once, so the practical order is: symlink the widget, let Übersicht
+  load it, *then* edit the file.
+- Übersicht owns this file and rewrites it. Quit Übersicht before editing,
+  then relaunch — editing it while Übersicht is running risks your change
+  being overwritten.
+
+This makes the background-layer step automatable (a setup script, a
+dotfiles bootstrap, a Raycast action) — the menu click is just the simplest
+route for a person doing this once.
 
 ### Why this matters (measured window layers)
 
@@ -62,8 +99,8 @@ cd ubersicht-widgets
 ln -sfn "$PWD/dimmer.widget" "$HOME/Library/Application Support/Übersicht/widgets/dimmer.widget"
 ```
 
-Then complete the **required manual step** above — the widget will visibly
-dim desktop icons until you do.
+Then complete the **required step** above (menu click or config edit) — the
+widget will visibly dim desktop icons until you do.
 
 ## Configuration
 
@@ -94,13 +131,13 @@ There's no config flag for on/off — use Übersicht's own mechanisms:
 
 - **Menu bar**: click the widget's entry in Übersicht's menu and toggle it
   like any other widget.
-- **Scripted / hotkey**: unlike the background/foreground window layer
-  (menu-only, see above), a widget's per-widget `hidden` state was verified
-  during research to be reachable from `osascript`. That makes it possible
-  to wire a Raycast script or Shortcuts action to toggle `dimmer.widget`
-  without opening the menu — wrap whatever `osascript` invocation you use
-  for other Übersicht automation around this widget's folder name, the same
-  way you'd script hiding any other widget.
+- **Scripted / hotkey**: a widget's per-widget `hidden` state was verified
+  during research to be reachable from `osascript`, the same way
+  `inBackground` is reachable via `WidgetSettings.json` (see above). That
+  makes it possible to wire a Raycast script or Shortcuts action to toggle
+  `dimmer.widget` without opening the menu — wrap whatever `osascript`
+  invocation you use for other Übersicht automation around this widget's
+  folder name, the same way you'd script hiding any other widget.
 
 ## Multi-display
 
