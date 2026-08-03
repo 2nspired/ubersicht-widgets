@@ -57,11 +57,30 @@ function readCache() {
 }
 
 function writeCache(data) {
+  // Plain writeFileSync(CACHE, ...) truncates-then-writes CACHE in place.
+  // Übersicht runs this collector every 3s, so one run's write can overlap
+  // another run's read of the same path; a reader can then see a torn file
+  // (e.g. a shorter payload's bytes followed by the previous, longer write's
+  // leftover tail — the "Extra data" JSON parse error observed live).
+  // Writing to a per-process temp file and rename(2)-ing it into place
+  // avoids this: rename is atomic on POSIX within a filesystem, so a
+  // concurrent reader always sees either the old complete file or the new
+  // complete file, never a mixture. `process.pid` in the temp name keeps
+  // concurrent collectors from colliding with each other's temp file.
+  const tmp = `${CACHE}.${process.pid}.tmp`;
   try {
     fs.mkdirSync(path.dirname(CACHE), { recursive: true });
-    fs.writeFileSync(CACHE, JSON.stringify(data));
+    fs.writeFileSync(tmp, JSON.stringify(data));
+    fs.renameSync(tmp, CACHE);
   } catch {
-    // A read-only cache must degrade to "no history", never crash the widget.
+    // A read-only cache (or a failed rename) must degrade to "no history",
+    // never crash the widget. Best-effort cleanup so repeated failures don't
+    // litter the cache directory with abandoned temp files.
+    try {
+      fs.unlinkSync(tmp);
+    } catch {
+      // Nothing more to do if even cleanup fails.
+    }
   }
 }
 
@@ -227,21 +246,30 @@ async function main() {
   });
 }
 
-// A hung ps/ioreg must not pile up collectors across refreshes.
-const watchdog = setTimeout(() => {
-  emit({ status: "error", message: "collector timed out", cpu: null, history: [] });
-  process.exit(0);
-}, 4000);
+// Only auto-run when executed directly (`node collect.js`), exactly as
+// before. Guarding this behind require.main lets tests `require()` this
+// module to exercise writeCache/readCache directly (e.g. for the cache
+// atomicity tests) without spawning a collector process and without ever
+// changing what the CLI itself prints.
+if (require.main === module) {
+  // A hung ps/ioreg must not pile up collectors across refreshes.
+  const watchdog = setTimeout(() => {
+    emit({ status: "error", message: "collector timed out", cpu: null, history: [] });
+    process.exit(0);
+  }, 4000);
 
-main()
-  .then(() => clearTimeout(watchdog))
-  .catch((err) => {
-    clearTimeout(watchdog);
-    emit({
-      status: "error",
-      message: String((err && err.message) || err),
-      cpu: null,
-      history: [],
+  main()
+    .then(() => clearTimeout(watchdog))
+    .catch((err) => {
+      clearTimeout(watchdog);
+      emit({
+        status: "error",
+        message: String((err && err.message) || err),
+        cpu: null,
+        history: [],
+      });
+      process.exitCode = 0; // never crash the widget
     });
-    process.exitCode = 0; // never crash the widget
-  });
+}
+
+module.exports = { writeCache, readCache, CACHE };
