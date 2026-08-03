@@ -41,6 +41,37 @@ const card = css`
   overflow: hidden;
 `;
 
+const pill = css`
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 20px;
+  border-radius: 999px;
+  background: var(--ub-surface, linear-gradient(180deg, rgba(26, 29, 36, 0.92), rgba(18, 20, 26, 0.92)));
+  border: 1px solid var(--ub-border, rgba(255, 255, 255, 0.09));
+  box-shadow: var(--ub-shadow, 0 8px 30px rgba(0, 0, 0, 0.45));
+  color: var(--ub-text, #e8eaf0);
+  font-family: -apple-system, "SF Pro Display", Helvetica, sans-serif;
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+`;
+const divider = css`
+  width: 1px; align-self: stretch;
+  background: var(--ub-divider, rgba(255, 255, 255, 0.1));
+`;
+
+const Sparkline = ({ history, width, height }) => {
+  const p = streamPath(history, width, height);
+  if (!p) return null;
+  return (
+    <svg width={width} height={height} style={{ flexShrink: 0 }}>
+      <path d={p.line} style={{ fill: "none", stroke: "var(--ub-accent, #d97757)" }} strokeWidth="1.5" />
+    </svg>
+  );
+};
+
 const label = css`
   font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
   color: var(--ub-muted, #8b90a0); font-weight: 600;
@@ -186,6 +217,46 @@ const Ghost = ({ d }) => (
   </span>
 );
 
+const Ticker = ({ d }) => {
+  const config = d.config || {};
+  const n = Math.min(typeof config.topN === "number" ? config.topN : 3, 2);
+  const top = d.cpu.top.slice(0, n);
+  return (
+    <span style={{ display: "contents" }}>
+      {d.history && d.history.length > 1 && (
+        <Sparkline history={d.history} width={46} height={16} />
+      )}
+      <span className={sub}>
+        CPU <span className={strong} style={{ color: loadColor(d.cpu.percent) }}>{fmtPercent(d.cpu.percent)}</span>
+      </span>
+      {d.spike && (
+        <span className={sub} style={{ fontSize: 9.5 }}>
+          peak <span className={strong} style={{ color: "var(--ub-warn, #d9a557)" }}>{d.spike.peak}%</span>
+          {" · "}{d.spike.aboveSeconds}s
+        </span>
+      )}
+      <span className={divider} />
+      {top.map((g, i) => (
+        <span className={sub} key={`${g.label}-${i}`}>
+          <span style={{ color: loadColor(g.percent) }}>●</span>{" "}
+          <span className={strong}>{g.label}</span> {fmtPercent(g.percent)}
+        </span>
+      ))}
+      {d.gpu.visible && (
+        <span style={{ display: "contents" }}>
+          <span className={divider} />
+          <span className={sub}>GPU <span className={strong}>{fmtPercent(d.gpu.utilization)}</span></span>
+        </span>
+      )}
+      <span className={divider} />
+      <span className={sub} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        MEM <span className={strong}>{fmtBytes(d.memory.usedBytes)}</span>
+        <span style={{ display: "flex", width: 44 }}><MemoryBar memory={d.memory} /></span>
+      </span>
+    </span>
+  );
+};
+
 const cornerStyle = (corner, scale) => {
   const [v, h] = String(corner || "top-right").split("-");
   return {
@@ -194,7 +265,9 @@ const cornerStyle = (corner, scale) => {
   };
 };
 
-const LAYOUTS = { ghost: Ghost };
+const LAYOUTS = { ghost: Ghost, ticker: Ticker };
+// The ticker is a pill, not a card; the container differs per layout.
+const CONTAINERS = { ghost: card, ticker: pill };
 
 export const render = ({ output }) => {
   let d;
@@ -212,8 +285,9 @@ export const render = ({ output }) => {
   if (d.status === "error" || !d.cpu) {
     return <div className={card} style={style}><span className={sub}>system: unavailable</span></div>;
   }
-  const Layout = LAYOUTS[config.layout] || Ghost;
-  return <div className={card} style={style}><Layout d={d} /></div>;
+  const name = LAYOUTS[config.layout] ? config.layout : "ghost";
+  const Layout = LAYOUTS[name];
+  return <div className={CONTAINERS[name]} style={style}><Layout d={d} /></div>;
 };
 
 export { themeVars, TOKENS, Stream, Rows, MemoryBar };
