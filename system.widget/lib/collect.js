@@ -181,7 +181,7 @@ async function main() {
   const visible = groups.filter((g) => !cpuLib.isSelfGroup(g, selfLabels));
 
   const totalPercent = [...percents.values()].reduce((a, b) => a + b, 0);
-  const headline = Math.max(0, Math.min(100, Math.round(totalPercent / cores)));
+  const headline = cpuLib.normalizeHeadline(totalPercent, cores);
 
   const vmStat = memLib.parseVmStat(vmOut);
   const memory = memLib.buildMemory({

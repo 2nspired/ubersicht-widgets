@@ -137,25 +137,17 @@ test("config values (topN, show.history, gpuThreshold) actually drive the collec
   assert.equal(d.spike, null, "spike detection needs history and must not run when history is suppressed");
   assert.equal(d.gpu.visible, false, "gpuThreshold: 101 is unreachable, so gpu.visible must be false");
 
-  // Fourth mutant: dropping "/ cores" from the headline calc. This can't be
-  // driven through config.json (core count comes from `sysctl hw.logicalcpu`,
-  // not configuration), so it's checked against the live machine's real
-  // process table instead of a controlled fixture. On any actively-used
-  // multi-core Mac, the *sum* of every process's per-core percentage
-  // routinely exceeds 100 (many small background daemons across many cores),
-  // so a headline that skips the "/ cores" division and just clamps the raw
-  // sum would almost always read a suspicious flat 100. Dividing by a
-  // double-digit core count brings it back down into a normal double-digit
-  // range. This assertion is inherently environment-dependent — on an
-  // idle single-core machine, or one under so much load that even the
-  // correctly-normalised headline pins at 100, it would not distinguish the
-  // mutant. That risk was judged acceptable given the alternative (no check
-  // at all); see this repo's existing live-system assertions for the same
-  // trade-off (e.g. "headline CPU is normalised 0-100" above).
+  // Fourth mutant (dropping "/ cores" from the headline calc): NOT checked
+  // here. It was previously asserted as `d.cpu.percent < 100` against the
+  // live machine's real process table, but that only goes red when the
+  // uncontrolled `ps` snapshot happens to sum to over 100 across cores at the
+  // instant this test runs — on a lightly-loaded machine (the common case)
+  // the assertion is a no-op that passes under the mutant too. An independent
+  // reviewer ran the mutation 8/8 green. This sanity check only confirms the
+  // headline is a valid percentage at all; the actual "/ cores" division is
+  // covered deterministically, with fixed inputs, by
+  // tests/system-cpu.test.js's `normalizeHeadline` tests.
   assert.ok(d.cpu.cores > 1, "expected a multi-core machine for this check to be meaningful");
-  assert.ok(
-    d.cpu.percent < 100,
-    "headline must be divided by core count, not just the clamped raw process-percent sum"
-  );
+  assert.ok(d.cpu.percent >= 0 && d.cpu.percent <= 100, "headline stays a valid percentage");
 });
 

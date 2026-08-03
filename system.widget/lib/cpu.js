@@ -134,8 +134,20 @@ function isSelfGroup(group, selfLabels) {
   return selfLabels.has(String(group.label || "").normalize("NFC"));
 }
 
+// Headline CPU is a share of the whole machine (0-100), unlike the per-group
+// figures, which are per-core and may exceed 100. `cores` is expected to be a
+// positive integer from `sysctl hw.logicalcpu`, but that call can fail (the
+// caller then falls back to 1) or, in principle, return something stranger —
+// guard against 0/negative/non-finite so this never divides into NaN or
+// Infinity.
+function normalizeHeadline(totalPercent, cores) {
+  const total = Number.isFinite(totalPercent) ? totalPercent : 0;
+  const n = Number.isFinite(cores) && cores > 0 ? cores : 1;
+  return Math.max(0, Math.min(100, Math.round(total / n)));
+}
+
 module.exports = {
   parseCpuTime, parsePsSample, computeDeltas, DISCONTINUITY_SECONDS,
   DEV_BINARIES, bundleName, classify, groupProcesses, topBy,
-  excludeSelf, isSelfGroup,
+  excludeSelf, isSelfGroup, normalizeHeadline,
 };

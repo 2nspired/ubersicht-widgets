@@ -242,3 +242,32 @@ test("isSelfGroup does not exclude unrelated app labels", () => {
   const selfLabels = new Set(["Übersicht", "Uebersicht"]);
   assert.equal(cpu.isSelfGroup({ kind: "app", label: "Google Chrome" }, selfLabels), false);
 });
+
+// normalizeHeadline turns the raw sum of per-core process percentages into a
+// 0-100 device-wide share. Deterministic, fixture-driven coverage for the
+// mutation that a live-system assertion in tests/system-collect.test.js
+// could not reliably catch (dropping "/ cores" only overflows past 100 on a
+// machine busy enough at the instant of the ps snapshot).
+test("normalizeHeadline divides the per-core sum by core count", () => {
+  assert.equal(cpu.normalizeHeadline(1200, 12), 100);
+  assert.equal(cpu.normalizeHeadline(600, 12), 50);
+});
+
+test("normalizeHeadline returns 0 for a zero sum", () => {
+  assert.equal(cpu.normalizeHeadline(0, 12), 0);
+});
+
+test("normalizeHeadline clamps a sum exceeding machine capacity to 100", () => {
+  assert.equal(cpu.normalizeHeadline(2400, 12), 100);
+});
+
+test("normalizeHeadline never produces NaN or Infinity for a bad core count", () => {
+  // collect.js falls back to `cores = 1` when `sysctl hw.logicalcpu` fails,
+  // but the pure function guards independently in case it is ever called
+  // with something stranger.
+  assert.equal(cpu.normalizeHeadline(50, 0), 50);
+  assert.equal(cpu.normalizeHeadline(50, -4), 50);
+  assert.equal(cpu.normalizeHeadline(50, NaN), 50);
+  assert.equal(cpu.normalizeHeadline(50, undefined), 50);
+  assert.equal(cpu.normalizeHeadline(NaN, 12), 0);
+});
