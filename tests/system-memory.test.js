@@ -55,10 +55,15 @@ test("buildMemory maps pressure levels to names", () => {
 });
 
 test("buildMemory computes usedPercent excluding reclaimable pages", () => {
-  const vmStat = { pageSize: 16384, free: 500, active: 300, inactive: 0,
+  // inactive is non-zero here on purpose: a bug that folds reclaimable pages
+  // (inactive/speculative) into usedBytes must move this number. With
+  // inactive at 0 the same bug would add exactly zero and this test could
+  // never fail regardless of what buildMemory does.
+  const vmStat = { pageSize: 16384, free: 100, active: 300, inactive: 400,
                    speculative: 0, wired: 100, compressor: 100 };
   const m = mem.buildMemory({ vmStat, totalBytes: 1000 * 16384, pressureLevel: 1, swapUsedBytes: 0 });
-  assert.equal(m.usedPercent, 50); // (300+100+100)/1000
+  // correct: (300+100+100)/1000 = 50; a bug counting inactive as used gives 90.
+  assert.equal(m.usedPercent, 50);
 });
 
 test("parseSwapUsed reads megabytes from vm.swapusage", () => {

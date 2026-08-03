@@ -32,8 +32,11 @@ Set `layout` in `config.json`:
 
 - **`ghost`** (default) — a card in a screen corner: a background CPU
   stream, headline CPU/MEM figures, the top-N processes by CPU, GPU when
-  busy, a segmented memory bar, and — only while memory pressure isn't
-  `normal` — a top-memory list.
+  busy, a segmented memory bar, and — only while memory pressure is
+  `warning` or `critical` — a top-memory list. (An `unknown` pressure reading,
+  e.g. because `sysctl kern.memorystatus_vm_pressure_level` failed, is treated
+  as "no evidence of pressure," not as sustained pressure, so the list stays
+  hidden.)
 - **`ticker`** — a single-line pill: a small sparkline, headline CPU, the
   active spike (if any), up to **two** top processes (the layout caps at 2
   regardless of `topN`), GPU when busy, and a compact memory bar.
@@ -48,7 +51,7 @@ underneath it reads 202% — they're not the same unit, and that's deliberate,
 not a bug.
 
 **Grouping.** Processes are grouped by owning application, keyed off the
-nearest enclosing `.app` bundle in their executable path (macOS helper
+**outermost** `.app` bundle in their executable path (macOS helper
 processes live in nested bundles — e.g. an `Obsidian Helper (GPU).app` inside
 `Obsidian.app` — the outer, owning bundle wins). Chrome's ~57 helper
 processes become one `Chrome` row with a count badge, not fifty-seven rows.

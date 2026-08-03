@@ -62,7 +62,12 @@ test("detectSpike reports peak, duration and how long ago it ended", () => {
   const spike = h.detectSpike(entries, { percent: 70, seconds: 15 }, now);
   assert.ok(spike, "expected a spike");
   assert.equal(spike.peak, 98);
-  assert.equal(spike.aboveSeconds, 15); // 5 samples x 3s
+  // 5 intervals x 3s: the credited time is between consecutive samples, not
+  // per-sample — the oldest sample in the window contributes nothing, since
+  // detectSpike has no evidence of what happened before it. Counting samples
+  // instead of intervals is exactly the off-by-one that produced the original
+  // detectSpike defect this suite guards against.
+  assert.equal(spike.aboveSeconds, 15);
   assert.equal(spike.active, false);
   assert.equal(spike.endedSecondsAgo, 12);
 });
@@ -108,6 +113,20 @@ test("detectSpike never double-counts the interval when the first two samples ar
   assert.equal(spike.aboveSeconds, 5);
   const span = entries[entries.length - 1].t - entries[0].t;
   assert.ok(spike.aboveSeconds * 1000 <= span, "aboveSeconds must never exceed the sample set's elapsed span");
+});
+
+test("detectSpike does not credit a sleep-sized gap (>30s) between above-threshold samples", () => {
+  const now = 300000;
+  // The gap from the first to the second sample is 31s — a discontinuity —
+  // even though both straddling readings are above threshold. That interval
+  // must contribute nothing; only the two later 3s intervals (6s total) may
+  // count. With `seconds: 20` the spike only "qualifies" if the 31s gap is
+  // wrongly credited (31+3+3=37s >= 20s); with the gap correctly rejected,
+  // 6s < 20s and no spike is reported.
+  const entries = [
+    S(now - 40000, 95), S(now - 9000, 95), S(now - 6000, 95), S(now - 3000, 95), S(now, 20),
+  ];
+  assert.equal(h.detectSpike(entries, { percent: 70, seconds: 20 }, now), null);
 });
 
 test("detectSpike copes with fewer than two samples", () => {

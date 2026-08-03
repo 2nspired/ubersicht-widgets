@@ -2123,7 +2123,7 @@ Follow the structure of `dev-servers.widget/README.md` (read it first). It must 
   - *Grouping.* Processes are grouped by owning application — Chrome's 57 processes become one row. Development processes (`node`, `python`, `deno`, `bun`, `ruby`, `go`, `cargo`, `rustc`, `java`) are labelled by project instead, because collapsing thirteen `node` processes into one row hides the useful part.
   - *Memory figures are RSS, and grouped RSS overstates real usage,* because shared pages are counted once per process. Activity Monitor's "Memory" column uses a different metric with no cheap CLI equivalent. Treat the numbers as a ranking, not an audit.
 - A note that GPU is device-level only, hidden below `gpuThreshold`, and that per-process GPU attribution requires root (`powermetrics`) and is therefore unavailable.
-- A note that history is cached at `~/.cache/ubersicht-system-widget/history.json`, and that `"show": {"history": false}` makes the widget fully stateless and writes no cache.
+- A note that history is cached at `~/.cache/ubersicht-system-widget/history.json`, and that `"show": {"history": false}` does **not** make the widget fully stateless: the collector still writes the cache every refresh, because the previous `ps` sample it holds is what CPU percentages are diffed against — only the sample ring is suppressed.
 
 - [ ] **Step 2: Add the widget to the root README**
 
@@ -2167,7 +2167,7 @@ EOF
 
 ## Final verification
 
-- [ ] `npm test` — 141 tests, all passing
+- [ ] `npm test` — 150 tests, all passing
 - [ ] `npm run check:bundle` — all three widgets compile
 - [ ] `npm run sync:shared` followed by `git status` — clean, proving vendored copies are in sync
 - [ ] `git status` — clean

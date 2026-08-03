@@ -2,7 +2,6 @@
 "use strict";
 const fs = require("fs");
 const path = require("path");
-const os = require("os");
 
 // Shared with system.widget; canonical copy lives at repo-root lib/project.js
 // and is vendored here by scripts/sync-shared.sh.

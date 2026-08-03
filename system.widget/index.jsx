@@ -162,65 +162,76 @@ const SpikeLine = ({ spike }) => {
   );
 };
 
-const Ghost = ({ d }) => (
-  <span style={{ display: "contents" }}>
-    <Stream history={d.history} width={300} height={112} />
-    <div style={{ position: "relative" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 3 }}>
-        <span className={label}>System</span>
-        <span className={sub}>
-          CPU <span className={strong} style={{ color: loadColor(d.cpu.percent) }}>{fmtPercent(d.cpu.percent)}</span>
-          {" · MEM "}<span className={strong}>{fmtPercent(d.memory.usedPercent)}</span>
-        </span>
-      </div>
-      <SpikeLine spike={d.spike} />
-      <Rows
-        items={d.cpu.top}
-        render={(g) => (
-          <span style={{ display: "contents" }}>
-            <span style={{ color: loadColor(g.percent), fontSize: 8 }}>●</span>
-            <span className={`${strong} ${nameCss}`}>{g.label}</span>
-            {g.count > 1 && <span className={sub} style={{ fontSize: 9 }}>{g.count}</span>}
-            <span className={sub}>{fmtPercent(g.percent)}</span>
+const Ghost = ({ d }) => {
+  const show = (d.config && d.config.show) || {};
+  const showMemory = show.memory !== false;
+  return (
+    <span style={{ display: "contents" }}>
+      <Stream history={d.history} width={300} height={112} />
+      <div style={{ position: "relative" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 3 }}>
+          <span className={label}>System</span>
+          <span className={sub}>
+            CPU <span className={strong} style={{ color: loadColor(d.cpu.percent) }}>{fmtPercent(d.cpu.percent)}</span>
+            {showMemory && <span style={{ display: "contents" }}>
+              {" · MEM "}<span className={strong}>{fmtPercent(d.memory.usedPercent)}</span>
+            </span>}
           </span>
-        )}
-      />
-      {d.gpu.visible && (
-        <div className={rowCss} style={{ marginTop: 4 }}>
-          <span className={label} style={{ flex: 1 }}>GPU</span>
-          <span className={strong}>{fmtPercent(d.gpu.utilization)}</span>
         </div>
-      )}
-      <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 7 }}>
-        <span className={label}>Mem</span>
-        <MemoryBar memory={d.memory} />
-        <span className={sub}>
-          <span className={strong}>{fmtBytes(d.memory.usedBytes)}</span>
-          {"/"}{fmtBytes(d.memory.totalBytes)}
-        </span>
-      </div>
-      {d.memory.pressure !== "normal" && (
-        <span style={{ display: "contents" }}>
-          <div className={label} style={{ marginTop: 5 }}>Top memory · {d.memory.pressure}</div>
-          <Rows
-            items={d.memory.top}
-            render={(g) => (
+        <SpikeLine spike={d.spike} />
+        <Rows
+          items={d.cpu.top}
+          render={(g) => (
+            <span style={{ display: "contents" }}>
+              <span style={{ color: loadColor(g.percent), fontSize: 8 }}>●</span>
+              <span className={`${strong} ${nameCss}`}>{g.label}</span>
+              {g.count > 1 && <span className={sub} style={{ fontSize: 9 }}>{g.count}</span>}
+              <span className={sub}>{fmtPercent(g.percent)}</span>
+            </span>
+          )}
+        />
+        {d.gpu.visible && (
+          <div className={rowCss} style={{ marginTop: 4 }}>
+            <span className={label} style={{ flex: 1 }}>GPU</span>
+            <span className={strong}>{fmtPercent(d.gpu.utilization)}</span>
+          </div>
+        )}
+        {showMemory && (
+          <span style={{ display: "contents" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 7 }}>
+              <span className={label}>Mem</span>
+              <MemoryBar memory={d.memory} />
+              <span className={sub}>
+                <span className={strong}>{fmtBytes(d.memory.usedBytes)}</span>
+                {"/"}{fmtBytes(d.memory.totalBytes)}
+              </span>
+            </div>
+            {(d.memory.pressure === "warning" || d.memory.pressure === "critical") && (
               <span style={{ display: "contents" }}>
-                <span className={`${strong} ${nameCss}`}>{g.label}</span>
-                <span className={sub}>{fmtBytes(g.rssKb * 1024)}</span>
+                <div className={label} style={{ marginTop: 5 }}>Top memory · {d.memory.pressure}</div>
+                <Rows
+                  items={d.memory.top}
+                  render={(g) => (
+                    <span style={{ display: "contents" }}>
+                      <span className={`${strong} ${nameCss}`}>{g.label}</span>
+                      <span className={sub}>{fmtBytes(g.rssKb * 1024)}</span>
+                    </span>
+                  )}
+                />
               </span>
             )}
-          />
-        </span>
-      )}
-    </div>
-  </span>
-);
+          </span>
+        )}
+      </div>
+    </span>
+  );
+};
 
 const Ticker = ({ d }) => {
   const config = d.config || {};
   const n = Math.min(typeof config.topN === "number" ? config.topN : 3, 2);
   const top = d.cpu.top.slice(0, n);
+  const showMemory = ((config.show || {}).memory) !== false;
   return (
     <span style={{ display: "contents" }}>
       {d.history && d.history.length > 1 && (
@@ -248,11 +259,15 @@ const Ticker = ({ d }) => {
           <span className={sub}>GPU <span className={strong}>{fmtPercent(d.gpu.utilization)}</span></span>
         </span>
       )}
-      <span className={divider} />
-      <span className={sub} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        MEM <span className={strong}>{fmtBytes(d.memory.usedBytes)}</span>
-        <span style={{ display: "flex", width: 44 }}><MemoryBar memory={d.memory} /></span>
-      </span>
+      {showMemory && (
+        <span style={{ display: "contents" }}>
+          <span className={divider} />
+          <span className={sub} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            MEM <span className={strong}>{fmtBytes(d.memory.usedBytes)}</span>
+            <span style={{ display: "flex", width: 44 }}><MemoryBar memory={d.memory} /></span>
+          </span>
+        </span>
+      )}
     </span>
   );
 };

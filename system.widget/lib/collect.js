@@ -119,14 +119,30 @@ async function main() {
   const elapsed = cache.at ? (nowMs - cache.at) / 1000 : 0;
   const discontinuous = hist.isDiscontinuity(cache.at, nowMs);
 
+  // A cache file can be valid JSON with an invalid shape (hand-edited, from a
+  // future/older format, etc.) — `sample` might not be an array at all. Treat
+  // that the same as "no cached sample": fall through to the first-run path
+  // rather than letting `.map` throw and brick the widget on a bad cache that
+  // is never overwritten because the throw happens before writeCache below.
+  const prevList = Array.isArray(cache.sample) ? cache.sample : null;
+
   let percents;
   let cpuEstimated = false;
-  if (!discontinuous && cache.sample) {
-    const prev = new Map(cache.sample.map((e) => [e[0], { cpuSeconds: e[1], comm: e[2] }]));
+  if (!discontinuous && prevList) {
+    const prev = new Map(prevList.map((e) => [e[0], { cpuSeconds: e[1], comm: e[2] }]));
     percents = cpuLib.computeDeltas(prev, samples, elapsed);
   } else {
     // First run (or post-sleep): no delta is possible. Fall back to ps's
     // decaying average for this one cycle rather than showing blanks.
+    //
+    // Note: this fallback `ps` call covers every process on the machine,
+    // including the collector's own transient node process — unlike the
+    // delta path above, whose `samples` map has already had this process's
+    // pid removed by excludeSelf. The two paths therefore sum slightly
+    // different populations for one cycle. This is intentionally left as-is:
+    // it lasts exactly one 3-second refresh (cpuEstimated is true only here),
+    // and the headline's Math.max(0, Math.min(100, ...)) clamp absorbs the
+    // negligible skew from a single always-cheap collector process.
     percents = new Map();
     const fallback = await run("ps", ["-axo", "pid=,pcpu="]);
     for (const line of fallback.split("\n")) {

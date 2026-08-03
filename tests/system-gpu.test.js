@@ -13,7 +13,12 @@ test("parseIoreg reads Device Utilization from real ioreg output", () => {
 });
 
 test("parseIoreg takes the maximum across multiple accelerators", () => {
-  const text = '"Device Utilization %"=11\nsomething\n"Device Utilization %"=64\n';
+  // Descending order on purpose: with ascending values a "take the last
+  // match" implementation would coincidentally produce the same answer as
+  // "take the max," and the test could not distinguish the two. Here the
+  // max (64) appears first and the last (11) is smaller, so only a genuine
+  // max implementation passes.
+  const text = '"Device Utilization %"=64\nsomething\n"Device Utilization %"=11\n';
   assert.equal(gpu.parseIoreg(text).utilization, 64);
 });
 
